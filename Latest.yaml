@@ -23,12 +23,14 @@ blueprint:
      Tested on Android only. <br /><br />
      
      Variables which may be useful for frigate message and AI prompts
-       - input_objects = Objects required<br />
-       - input_camera_name = Camera required<br />
-       - camera_name = Camera triggered<br />
-       - objects = Onjects found<br />
-       - zone_names = Zones required<br />
-       - after_zones = Zones triggered<br />
+       - {{input_objects}} = Objects required<br />
+       - {{objects}} = Objects found<br />
+       - {{input_camera_name}} = Camera required<br />
+       - {{camera_name}} = Camera triggered<br />
+       - {{zone_names}} = Zones required<br />
+       - {{after_zones}} = Zones triggered<br />
+       - {{detections{0] = Event ID 1 <br />
+       - {{detections{1] = Event ID 2 <br />
 
      Version: v 0.4
 
@@ -76,7 +78,7 @@ blueprint:
             boolean: {}
         in_objects:
           name: Required Objects
-          description: Objects required in the selected zones if any.
+          description: Frigate objects required in the selected zones if any.
           default: []
           selector:
             select:
@@ -139,6 +141,14 @@ blueprint:
                 - sandwich
                 - orange
                 - broccoli
+        in_sub_labels:
+          name: Sub Labels Required
+          description: Frigate sub labels required in the selected zones if any.
+          default: []
+          selector:
+            text:
+              multiline: false
+              multiple: true
         in_host:
           name: Home Assistant IP Address.
           description: Home Assistant ip address.
@@ -178,8 +188,8 @@ blueprint:
               - gemini-1.5-pro
               - gemini-2.0-flash
               - gemini-2.0-flash-lite
-              - gemini-2.5-pro-preview-05-06
-              - gemini-2.5-flash-preview-05-20
+              - gemini-2.5-pro
+              - gemini-2.5-flash
               - llama-3.2-90b-vision-preview
               - llama-3.2-11b-vision-preview
               - Llama-4-Scout-17B-16E-Instruct-FP8
@@ -196,7 +206,7 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If you are using LLM for image analyse and want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - Alert"
+          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert"
           selector:
             text:
         in_frigate_msg:
@@ -220,8 +230,9 @@ blueprint:
                    concentrate on the {{input_objects| join(',')|replace('_', ' ')}} if seen within
                    the {{zone_names| join(' and ,')|replace('_',' ')}}. 
                    Any person approaching the camera should take priority over all other events.
-                   The response is an intial alert for a mobile phone security notification. If you see 
-                   a known person from memory, mention this so the response.
+                   If you see a known person from memory, mention this so the response.
+                   Do not mention the prompt or describe the environment in your response.
+                   The response is an intial alert for a mobile phone security notification. 
           selector:
             text:
               multiline: true
@@ -303,7 +314,7 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description:  Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - Alert Update"
+          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert Update"
           selector:
             text:
               multiline: false
@@ -311,18 +322,13 @@ blueprint:
         prompt2:
           name: Prompt 
           description: Model prompt.
-          default: You are viewing a clip from my {{camera_name}} security camera.You need
-                  to concentrate on the {{zone_names| join(' and ,')|replace('_',
-                  ' ' )}} areas rather than other areas. The primary objects
-                  of interest are {{input_objects| join(',')|replace('_', ' '
-                  )}} describe them and what they are doing.  If it is a
-                  known {{input_objects| join(',')|replace('_', ' ' )}} or a
-                  familiar company for example Royal Mail or DHL then state
-                  this in your description. Try and keep the response direct
-                  and clear and keep the response to 2 sentences so it can
-                  be easily viewed on a mobile phone notification. Do not
-                  reference this prompt, the weather or the environment in
-                  the response.
+          default: Analyse the video clip which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}
+                   The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}
+                   Focus on the objects referenced which are entering the areas of interest and describe what they are doing.
+                   Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
+                   Do not mention the prompt or describe the environment in your response.  
+                   Your response will be used for a mobile phone notification message with the clip attached.
+                  
           selector:
             text:
               multiline: true
@@ -471,10 +477,14 @@ blueprint:
           selector:
             select:
               options:
+              - label: Lovelace URL
+                value: /Lovelace
               - label: View Downloaded Snapshot
                 value: "{{image_local}}"
               - label: View Frigate Snapshot
                 value: "{{image}}"
+              custom_value: true
+              
         click_action2:
           name: Click Action End Event 
           description: Notification Click Action For End Event Notification . Default used is a Lovelace URL.
@@ -482,6 +492,8 @@ blueprint:
           selector:
             select:
               options:
+              - label: Lovelace URL
+                value: /Lovelace
               - label: View Downloaded Snapshot
                 value: "{{image_local}}"
               - label: View Frigate Snapshot
@@ -490,6 +502,8 @@ blueprint:
                 value: "{{video_local}}"
               - label: View Frigate Clip
                 value: "{{video}}"
+              custom_value: true
+              
         cooldown:
           name: Cooldown
           description: Time in minutes to wait before running this automation again.
@@ -535,7 +549,10 @@ conditions:
     alias: Valid Camera
   - condition: template
     value_template: "{{objects_match}}"
-    alias: Valid Object
+    alias: Object Matched
+  - condition: template
+    value_template: "{{sub_labels_match}}"
+    alias: Sub Label Matched
   - condition: template
     value_template: "{{zone_match}}"
     alias: Valid Zone
@@ -557,7 +574,10 @@ actions:
         Detection 1 ID: {{id}} /n 
         Objects required: {{input_objects}} /n 
         Objects found: {{objects}} /n
-        Object match: {{objects_match}} /n 
+        Object match: {{objects_match}} /n
+        Sub Labels required: {{input_sub_labels}} /n
+        Sub Labels found: {{sub_labels}} /n
+        Sub Labels match: {{sub_labels_match}} /n
         Zones required: {{zone_names}} /n
         Zones triggered: {{after_zones}} /n
         Zone match: {{zone_match}} /n 
@@ -783,6 +803,7 @@ variables:
   frigate_topic: frigate/reviews
   input_camera: !input in_camera
   input_objects: !input in_objects
+  input_sub_labels: !input in_sub_labels
   input_zones: !input in_zones
   custom_zones: !input in_custom_zones
   all_zones: !input in_all_zones
@@ -807,6 +828,10 @@ variables:
   objects: "{{ event['after']['data']['objects']}}"
   objects_match: >-
     {{input_objects | length == 0 or (input_objects |select('in', objects) |list
+    |length > 0) }}
+  sub_labels: "{{ event['after']['data']['sub_labels']}}"
+  sub_labels_match: >-    
+    {{input_sub_labels | length == 0 or (input_sub_labels |select('in', sub_labels) |list
     |length > 0) }}
   zone_names: >-
         {% set device_zones = input_zones %}
