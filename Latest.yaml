@@ -32,7 +32,7 @@ blueprint:
        - {{detections{0] = Event ID 1 <br />
        - {{detections{1] = Event ID 2 <br />
 
-     Version: v 0.4
+     Version: v 0.41
 
   domain: automation
   input:
