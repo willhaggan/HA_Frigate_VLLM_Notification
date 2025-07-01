@@ -249,4 +249,4 @@ This project is licensed under the MIT License - see the repository for details.
 
 **Version**: v0.41  
 **Author**: whag  
-**Last Updated**: January 2025
+**Last Updated**: June 2025
