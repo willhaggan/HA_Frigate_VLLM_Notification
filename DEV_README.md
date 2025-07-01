@@ -239,3 +239,366 @@ When features are proven stable, they will be:
 - **[Discussions](https://github.com/willhaggan/HA_Frigate_VLLM_Notification/discussions)** - Community discussion
 
 **Remember**: This is experimental software. Always test thoroughly and maintain backups of your working configuration!
+
+---
+
+# 🚀 Frigate LLM Notification - Action Button Configuration Guide
+
+This guide provides comprehensive information on configuring and using the new action button features in the Frigate LLM Notification system. Action buttons allow for interactive notifications with customizable actions, enhancing the capabilities of your home automation setup.
+
+## 📋 Action Button Configuration
+
+### New Configuration Options
+
+```yaml
+# Notification Action Buttons
+Notification Options:
+  enable_action_buttons: true/false
+  
+  # Button 1 Configuration
+  action_button_1_text: "View Live"
+  action_button_1_action: view_live_camera/download_snapshot/etc.
+  action_button_1_data: "media_player.living_room" # Optional data
+  
+  # Button 2 Configuration  
+  action_button_2_text: "Dismiss"
+  action_button_2_action: dismiss_notification/toggle_camera/etc.
+  action_button_2_data: "switch.camera_detect" # Optional data
+  
+  # Button 3 Configuration (Optional)
+  action_button_3_text: "Share"
+  action_button_3_action: share_clip/emergency_protocol/etc.
+  action_button_3_data: "" # Optional data
+  
+  # Advanced Button Settings
+  action_button_style: default/colored/icons_only/text_only/large
+  action_timeout: 30 # Minutes (0 = no timeout)
+  persistent_actions: true/false
+```
+
+### 🔒 Security Features
+
+- **Authentication Required**: Sensitive actions require device authentication
+- **Destructive Action Warnings**: Visual indicators for potentially harmful actions
+- **Timeout Protection**: Buttons automatically expire after configured time
+- **Action Logging**: All button presses logged to Home Assistant logbook
+
+## 📋 Configuration Examples
+
+### 🎯 Basic Action Button Setup
+
+```yaml
+# Enable action buttons
+enable_action_buttons: true
+
+# Simple configuration for common use cases
+action_button_1_text: "📹 View Live"
+action_button_1_action: view_live_camera
+action_button_1_data: ""
+
+action_button_2_text: "❌ Dismiss"
+action_button_2_action: dismiss_notification
+action_button_2_data: ""
+
+action_button_3_text: ""
+action_button_3_action: ""
+action_button_3_data: ""
+```
+
+### 🏠 Home Security Setup
+
+```yaml
+# Security-focused configuration
+enable_action_buttons: true
+
+action_button_1_text: "🚨 View Live Camera"
+action_button_1_action: view_live_camera
+action_button_1_data: "media_player.living_room_tv"  # Cast to TV
+
+action_button_2_text: "🔒 Arm Security"
+action_button_2_action: toggle_security
+action_button_2_data: "alarm_control_panel.house_alarm"  # Security system
+
+action_button_3_text: "🚔 Emergency"
+action_button_3_action: emergency_protocol
+action_button_3_data: "script.emergency_response"  # Emergency script
+
+# Advanced settings
+action_button_style: colored
+action_timeout: 60  # 1 hour timeout
+persistent_actions: true
+```
+
+### 🎬 Media Management Setup
+
+```yaml
+# Media-focused configuration
+enable_action_buttons: true
+
+action_button_1_text: "💾 Download Clip"
+action_button_1_action: download_clip
+action_button_1_data: "security_{{camera}}_{{id}}.mp4"  # Custom filename
+
+action_button_2_text: "📤 Share Clip"
+action_button_2_action: share_clip
+action_button_2_data: ""  # Will use default sharing method
+
+action_button_3_text: "🗂️ Archive"
+action_button_3_action: backup_clip
+action_button_3_data: "/backup/security/{{camera}}/{{id}}.mp4"  # Backup path
+
+action_button_style: large
+action_timeout: 120  # 2 hours
+```
+
+### 🏢 Business/Commercial Setup
+
+```yaml
+# Professional monitoring setup
+enable_action_buttons: true
+
+action_button_1_text: "👁️ Dashboard"
+action_button_1_action: view_frigate_dashboard
+action_button_1_data: "https://frigate.company.com/cameras/{{camera}}"
+
+action_button_2_text: "📞 Security Team"
+action_button_2_action: send_security
+action_button_2_data: "notify.security_team_telegram"  # Telegram group
+
+action_button_3_text: "📋 Create Report"
+action_button_3_action: run_automation
+action_button_3_data: "automation.create_security_incident_report"
+
+action_button_style: text_only
+action_timeout: 30
+persistent_actions: false
+```
+
+### 🔧 Advanced Custom Setup
+
+```yaml
+# Power user configuration with custom services
+enable_action_buttons: true
+
+action_button_1_text: "🔍 Analyze"
+action_button_1_action: custom_service
+action_button_1_data: "script.ai_analysis|{{image_local}}"  # Service|parameter
+
+action_button_2_text: "🔕 Silence 1hr"
+action_button_2_action: silence_1hour
+action_button_2_data: "input_boolean.frigate_{{camera}}_notifications"
+
+action_button_3_text: "🌐 Open URL"
+action_button_3_action: custom_url
+action_button_3_data: "https://my-dashboard.com/camera/{{camera}}/event/{{id}}"
+
+action_button_style: icons_only
+action_timeout: 0  # No timeout
+persistent_actions: true
+```
+
+## 🎛️ Action Button Reference Guide
+
+### 📱 Standard Actions (No Data Required)
+
+```yaml
+# Simple actions that don't need additional data
+action_button_1_action: view_live_camera      # Opens camera stream
+action_button_1_action: download_snapshot     # Downloads image
+action_button_1_action: download_clip         # Downloads video
+action_button_1_action: mark_reviewed         # Marks event as seen
+action_button_1_action: silence_30min         # Silences for 30 minutes
+action_button_1_action: silence_1hour         # Silences for 1 hour
+action_button_1_action: dismiss_notification  # Clears notification
+action_button_1_action: share_clip           # Shares via default method
+action_button_1_action: add_timeline         # Adds to timeline
+```
+
+### 🎯 Entity-Based Actions (Require Entity Data)
+
+```yaml
+# Actions that control Home Assistant entities
+action_button_1_action: toggle_camera
+action_button_1_data: "switch.front_door_camera_detect"
+
+action_button_1_action: toggle_security
+action_button_1_data: "alarm_control_panel.house_alarm"
+
+action_button_1_action: run_automation
+action_button_1_data: "automation.lights_on_motion"
+
+action_button_1_action: custom_service
+action_button_1_data: "light.turn_on|light.front_porch"  # service|entity
+```
+
+### 🌐 URL-Based Actions
+
+```yaml
+# Actions that open URLs or custom interfaces
+action_button_1_action: custom_url
+action_button_1_data: "https://frigate.local:5000/cameras/{{camera}}"
+
+action_button_1_action: view_frigate_dashboard
+action_button_1_data: "https://my-frigate.com/review/{{review_id}}"
+
+action_button_1_action: view_camera_settings
+action_button_1_data: "https://camera-config.local/{{camera}}"
+```
+
+### 📁 File-Based Actions (Custom Paths)
+
+```yaml
+# Actions that work with files and paths
+action_button_1_action: download_snapshot
+action_button_1_data: "security_{{camera}}_{{timestamp}}.jpg"
+
+action_button_1_action: download_clip
+action_button_1_data: "clips/{{camera}}/{{date}}/{{id}}.mp4"
+
+action_button_1_action: backup_clip
+action_button_1_data: "/nas/security/archive/{{camera}}/{{id}}.mp4"
+```
+
+### 📨 Notification Actions
+
+```yaml
+# Actions for advanced notification handling
+action_button_1_action: send_security
+action_button_1_data: "notify.telegram_security_group"
+
+action_button_1_action: mark_false_positive
+action_button_1_data: "input_boolean.false_positive_{{id}}"
+
+action_button_1_action: view_similar
+action_button_1_data: "{{objects[0]}}"  # Search by detected object
+```
+
+## 🔤 Template Variables Available
+
+When configuring data fields, you can use these template variables:
+
+```yaml
+# Event Information
+{{id}}           # Detection ID
+{{review_id}}    # Review ID  
+{{camera}}       # Camera name
+{{objects}}      # Detected objects list
+{{type}}         # Event type (new/end)
+{{timestamp}}    # Event timestamp
+
+# File Paths
+{{image_local}}  # Local snapshot path
+{{video_local}}  # Local clip path
+{{image}}        # Frigate snapshot URL
+{{video}}        # Frigate clip URL
+{{gif}}          # Preview GIF URL
+
+# Date/Time
+{{date}}         # Current date (YYYY-MM-DD)
+{{time}}         # Current time (HH:MM:SS)
+{{datetime}}     # Full datetime
+
+# Camera Info
+{{camera_name}}  # Friendly camera name
+{{zone}}         # Triggered zone
+{{severity}}     # Alert severity
+```
+
+## 🎨 Button Style Examples
+
+```yaml
+# Different visual styles
+action_button_style: default      # Standard iOS style
+action_button_style: colored      # Colored buttons with theme
+action_button_style: icons_only   # Only show icons
+action_button_style: text_only    # Only show text
+action_button_style: large        # Larger button size
+```
+
+## ⏰ Timeout Configuration Examples
+
+```yaml
+# Timeout settings
+action_timeout: 0      # No timeout (buttons stay active)
+action_timeout: 15     # 15 minutes
+action_timeout: 30     # 30 minutes (default)
+action_timeout: 60     # 1 hour
+action_timeout: 240    # 4 hours
+action_timeout: 1440   # 24 hours (maximum)
+
+# Persistent actions
+persistent_actions: true   # Buttons remain after dismissing notification
+persistent_actions: false  # Buttons disappear with notification (default)
+```
+
+## 🔄 Real-World Usage Scenarios
+
+### 🏠 Doorbell Camera
+```yaml
+action_button_1_text: "🔔 Answer Door"
+action_button_1_action: custom_service
+action_button_1_data: "script.answer_door|front_door"
+
+action_button_2_text: "🔒 Lock Door"
+action_button_2_action: custom_service
+action_button_2_data: "lock.lock|lock.front_door_smart_lock"
+
+action_button_3_text: "💬 Speak Message"
+action_button_3_action: run_automation
+action_button_3_data: "automation.doorbell_custom_message"
+```
+
+### 🚗 Driveway Monitoring
+```yaml
+action_button_1_text: "🚪 Open Garage"
+action_button_1_action: custom_service
+action_button_1_data: "cover.open_cover|cover.garage_door"
+
+action_button_2_text: "💡 Turn On Lights"
+action_button_2_action: custom_service
+action_button_2_data: "light.turn_on|light.driveway_lights"
+
+action_button_3_text: "📝 Log Vehicle"
+action_button_3_action: run_automation
+action_button_3_data: "automation.log_vehicle_entry"
+```
+
+### 🌙 Night Security
+```yaml
+action_button_1_text: "🔦 Spotlight On"
+action_button_1_action: custom_service
+action_button_1_data: "light.turn_on|light.security_spotlight"
+
+action_button_2_text: "📢 Play Warning"
+action_button_2_action: run_automation
+action_button_2_data: "automation.security_warning_announcement"
+
+action_button_3_text: "📱 Call Security"
+action_button_3_action: emergency_protocol
+action_button_3_data: "script.contact_security_company"
+```
+
+## 📚 Additional Resources
+
+### 📖 Comprehensive Documentation
+- **[📱 Action Button Examples](docs/ACTION_BUTTON_EXAMPLES.md)** - Detailed configuration examples for all scenarios
+- **[🚀 Quick Start Guide](docs/QUICK_START.md)** - Get started quickly with the blueprint
+- **[⚙️ Configuration Guide](docs/CONFIGURATION.md)** - Complete configuration reference
+- **[🔧 Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
+### 🎯 Example Files
+The `docs/ACTION_BUTTON_EXAMPLES.md` file contains:
+- **50+ real-world configuration examples**
+- **Complete template variable reference**
+- **Security and business use cases**
+- **IoT and smart home integrations**
+- **Debugging and testing guides**
+
+### 🔗 Quick Links
+- [Stable Version (Latest.yaml)](Latest.yaml) - Production-ready blueprint
+- [Development Version (Dev.yaml)](Dev.yaml) - Latest experimental features
+- [GitHub Repository](https://github.com/willhaggan/HA_Frigate_VLLM_Notification) - Source code and issues
+
+---
+
+**⚠️ Remember**: This is a development branch with experimental features. Test thoroughly before using in production environments!
