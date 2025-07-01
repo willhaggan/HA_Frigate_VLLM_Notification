@@ -2,7 +2,7 @@ blueprint:
   name: Frigate LLM Notification - Development Branch
   author: whag
   description: >
-     🚧 DEVELOPMENT VERSION - Experimental Features 🚧<br />
+     🚧 DEVELOPMENT VERSION v0.43-dev - Enhanced Action Buttons 🚧<br />
      This is the development branch with new features and improvements.<br />
      Use at your own risk - for stable version use Latest.yaml<br /><br />
      
@@ -16,6 +16,9 @@ blueprint:
      Link: https://www.home-assistant.io/integrations/downloader/<br /><br />
      
      🆕 Development Features:<br />
+     - 📱 Interactive Notification Action Buttons (up to 3 customizable buttons)<br />
+     - 🎛️ Advanced button actions (live view, downloads, automation triggers)<br />
+     - 🔒 Secure authentication for sensitive actions<br />
      - Enhanced error handling and retry logic<br />
      - Improved debugging and logging capabilities<br />
      - Advanced notification formatting options<br />
@@ -532,6 +535,167 @@ blueprint:
               max: 60
               step: 1
               mode: slider
+        # New notification action button options for dev branch
+        enable_action_buttons:
+          name: Enable Action Buttons
+          description: Enable interactive action buttons on notifications (experimental feature).
+          default: false
+          selector:
+            boolean: {}
+            
+        action_button_1_text:
+          name: Action Button 1 - Text
+          description: Text displayed on the first action button.
+          default: "View Live"
+          selector:
+            text:
+        
+        action_button_1_action:
+          name: Action Button 1 - Action
+          description: Action to perform when first button is pressed.
+          default: view_live_camera
+          selector:
+            select:
+              options:
+              - label: View Live Camera
+                value: view_live_camera
+              - label: View Frigate Dashboard
+                value: view_frigate_dashboard
+              - label: Download Snapshot
+                value: download_snapshot
+              - label: Download Clip
+                value: download_clip
+              - label: Mark as Reviewed
+                value: mark_reviewed
+              - label: Silence for 30 min
+                value: silence_30min
+              - label: Custom URL
+                value: custom_url
+              - label: Run Automation
+                value: run_automation
+              custom_value: true
+              
+        action_button_1_data:
+          name: Action Button 1 - Data
+          description: Additional data for the action (URL, automation entity_id, etc.).
+          default: ""
+          selector:
+            text:
+            
+        action_button_2_text:
+          name: Action Button 2 - Text
+          description: Text displayed on the second action button.
+          default: "Dismiss"
+          selector:
+            text:
+        
+        action_button_2_action:
+          name: Action Button 2 - Action
+          description: Action to perform when second button is pressed.
+          default: dismiss_notification
+          selector:
+            select:
+              options:
+              - label: Dismiss Notification
+                value: dismiss_notification
+              - label: View Recordings
+                value: view_recordings
+              - label: Toggle Camera
+                value: toggle_camera
+              - label: Arm/Disarm Security
+                value: toggle_security
+              - label: Custom Service Call
+                value: custom_service
+              - label: Mark False Positive
+                value: mark_false_positive
+              - label: Silence for 1 hour
+                value: silence_1hour
+              - label: View Camera Settings
+                value: view_camera_settings
+              custom_value: true
+              
+        action_button_2_data:
+          name: Action Button 2 - Data
+          description: Additional data for the action (service, entity_id, etc.).
+          default: ""
+          selector:
+            text:
+            
+        action_button_3_text:
+          name: Action Button 3 - Text
+          description: Text displayed on the third action button (optional).
+          default: ""
+          selector:
+            text:
+        
+        action_button_3_action:
+          name: Action Button 3 - Action
+          description: Action to perform when third button is pressed (optional).
+          default: ""
+          selector:
+            select:
+              options:
+              - label: None
+                value: ""
+              - label: Share Clip
+                value: share_clip
+              - label: Add to Timeline
+                value: add_timeline
+              - label: Create Clip Backup
+                value: backup_clip
+              - label: Send to Security Team
+                value: send_security
+              - label: Trigger Emergency Protocol
+                value: emergency_protocol
+              - label: View Similar Events
+                value: view_similar
+              - label: Custom Action
+                value: custom_action
+              custom_value: true
+              
+        action_button_3_data:
+          name: Action Button 3 - Data
+          description: Additional data for the third action (optional).
+          default: ""
+          selector:
+            text:
+            
+        # Advanced action button settings
+        action_button_style:
+          name: Action Button Style
+          description: Visual style for action buttons (experimental).
+          default: default
+          selector:
+            select:
+              options:
+              - label: Default
+                value: default
+              - label: Colored
+                value: colored
+              - label: Icons Only
+                value: icons_only
+              - label: Text Only
+                value: text_only
+              - label: Large Buttons
+                value: large
+              
+        action_timeout:
+          name: Action Button Timeout
+          description: How long action buttons remain active (minutes, 0 = no timeout).
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 1440
+              step: 5
+              unit_of_measurement: "minutes"
+              
+        persistent_actions:
+          name: Persistent Action Buttons
+          description: Keep action buttons available even after notification is dismissed.
+          default: false
+          selector:
+            boolean: {}
     Debug:
       name: 🚧 Development & Debugging Options
       icon: mdi:bug
@@ -616,6 +780,37 @@ triggers:
     payload: end
     value_template: "{{value_json['type']}}"
     id: End event
+  # Action button triggers (dev branch feature)
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "{{ 'BUTTON_1_' }}"
+    id: Action Button 1
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "{{ 'BUTTON_2_' }}"
+    id: Action Button 2
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "{{ 'BUTTON_3_' }}"
+    id: Action Button 3
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "{{ 'CLIP_BUTTON_1_' }}"
+    id: Clip Action Button 1
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "{{ 'CLIP_BUTTON_2_' }}"
+    id: Clip Action Button 2
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "{{ 'CLIP_BUTTON_3_' }}"
+    id: Clip Action Button 3
 conditions:
   - condition: template
     value_template: "{{camera_match}}"
@@ -760,6 +955,62 @@ actions:
                             tag: "{{id}}"
                             ttl: 0
                             priority: high
+                            # Enhanced action buttons (dev branch feature)
+                            actions: >
+                              {% if enable_action_buttons %}
+                              {% set actions_list = [] %}
+                              {% if action_button_1_text and action_button_1_text | length > 0 %}
+                              {% set action_1 = {
+                                "action": "BUTTON_1_" + id,
+                                "title": action_button_1_text,
+                                "icon": "sfsymbols:play.circle" if action_button_1_action == "view_live_camera" 
+                                        else "sfsymbols:square.and.arrow.down" if action_button_1_action == "download_snapshot"
+                                        else "sfsymbols:video" if action_button_1_action == "download_clip"
+                                        else "sfsymbols:checkmark.circle" if action_button_1_action == "mark_reviewed"
+                                        else "sfsymbols:bell.slash" if "silence" in action_button_1_action
+                                        else "sfsymbols:gear" if action_button_1_action == "run_automation"
+                                        else "sfsymbols:link",
+                                "destructive": action_button_1_action in ["silence_30min", "mark_false_positive"],
+                                "authenticationRequired": action_button_1_action in ["run_automation", "emergency_protocol"]
+                              } %}
+                              {% set actions_list = actions_list + [action_1] %}
+                              {% endif %}
+                              {% if action_button_2_text and action_button_2_text | length > 0 %}
+                              {% set action_2 = {
+                                "action": "BUTTON_2_" + id,
+                                "title": action_button_2_text,
+                                "icon": "sfsymbols:xmark.circle" if action_button_2_action == "dismiss_notification"
+                                        else "sfsymbols:video.circle" if action_button_2_action == "view_recordings"
+                                        else "sfsymbols:camera" if action_button_2_action == "toggle_camera"
+                                        else "sfsymbols:shield" if action_button_2_action == "toggle_security"
+                                        else "sfsymbols:exclamationmark.triangle" if action_button_2_action == "mark_false_positive"
+                                        else "sfsymbols:bell.slash" if "silence" in action_button_2_action
+                                        else "sfsymbols:gear.circle",
+                                "destructive": action_button_2_action in ["toggle_security", "mark_false_positive", "silence_1hour"],
+                                "authenticationRequired": action_button_2_action in ["toggle_security", "custom_service"]
+                              } %}
+                              {% set actions_list = actions_list + [action_2] %}
+                              {% endif %}
+                              {% if action_button_3_text and action_button_3_text | length > 0 and action_button_3_action | length > 0 %}
+                              {% set action_3 = {
+                                "action": "BUTTON_3_" + id,
+                                "title": action_button_3_text,
+                                "icon": "sfsymbols:square.and.arrow.up" if action_button_3_action == "share_clip"
+                                        else "sfsymbols:clock" if action_button_3_action == "add_timeline"
+                                        else "sfsymbols:externaldrive" if action_button_3_action == "backup_clip"
+                                        else "sfsymbols:person.2" if action_button_3_action == "send_security"
+                                        else "sfsymbols:exclamationmark.octagon.fill" if action_button_3_action == "emergency_protocol"
+                                        else "sfsymbols:magnifyingglass" if action_button_3_action == "view_similar"
+                                        else "sfsymbols:star",
+                                "destructive": action_button_3_action in ["emergency_protocol"],
+                                "authenticationRequired": action_button_3_action in ["emergency_protocol", "send_security", "custom_action"]
+                              } %}
+                              {% set actions_list = actions_list + [action_3] %}
+                              {% endif %}
+                              {{ actions_list }}
+                              {% else %}
+                              []
+                              {% endif %}
             - delay:
                 hours: 0
                 minutes: !input cooldown
@@ -860,6 +1111,62 @@ actions:
                             interruption-level: active
                             ttl: 0
                             priority: high
+                            # Enhanced action buttons (dev branch feature)
+                            actions: >
+                              {% if enable_action_buttons %}
+                              {% set actions_list = [] %}
+                              {% if action_button_1_text and action_button_1_text | length > 0 %}
+                              {% set action_1 = {
+                                "action": "CLIP_BUTTON_1_" + id,
+                                "title": action_button_1_text,
+                                "icon": "sfsymbols:play.circle" if action_button_1_action == "view_live_camera" 
+                                        else "sfsymbols:square.and.arrow.down" if action_button_1_action == "download_snapshot"
+                                        else "sfsymbols:video" if action_button_1_action == "download_clip"
+                                        else "sfsymbols:checkmark.circle" if action_button_1_action == "mark_reviewed"
+                                        else "sfsymbols:bell.slash" if "silence" in action_button_1_action
+                                        else "sfsymbols:gear" if action_button_1_action == "run_automation"
+                                        else "sfsymbols:link",
+                                "destructive": action_button_1_action in ["silence_30min", "mark_false_positive"],
+                                "authenticationRequired": action_button_1_action in ["run_automation", "emergency_protocol"]
+                              } %}
+                              {% set actions_list = actions_list + [action_1] %}
+                              {% endif %}
+                              {% if action_button_2_text and action_button_2_text | length > 0 %}
+                              {% set action_2 = {
+                                "action": "CLIP_BUTTON_2_" + id,
+                                "title": action_button_2_text,
+                                "icon": "sfsymbols:xmark.circle" if action_button_2_action == "dismiss_notification"
+                                        else "sfsymbols:video.circle" if action_button_2_action == "view_recordings"
+                                        else "sfsymbols:camera" if action_button_2_action == "toggle_camera"
+                                        else "sfsymbols:shield" if action_button_2_action == "toggle_security"
+                                        else "sfsymbols:exclamationmark.triangle" if action_button_2_action == "mark_false_positive"
+                                        else "sfsymbols:bell.slash" if "silence" in action_button_2_action
+                                        else "sfsymbols:gear.circle",
+                                "destructive": action_button_2_action in ["toggle_security", "mark_false_positive", "silence_1hour"],
+                                "authenticationRequired": action_button_2_action in ["toggle_security", "custom_service"]
+                              } %}
+                              {% set actions_list = actions_list + [action_2] %}
+                              {% endif %}
+                              {% if action_button_3_text and action_button_3_text | length > 0 and action_button_3_action | length > 0 %}
+                              {% set action_3 = {
+                                "action": "CLIP_BUTTON_3_" + id,
+                                "title": action_button_3_text,
+                                "icon": "sfsymbols:square.and.arrow.up" if action_button_3_action == "share_clip"
+                                        else "sfsymbols:clock" if action_button_3_action == "add_timeline"
+                                        else "sfsymbols:externaldrive" if action_button_3_action == "backup_clip"
+                                        else "sfsymbols:person.2" if action_button_3_action == "send_security"
+                                        else "sfsymbols:exclamationmark.octagon.fill" if action_button_3_action == "emergency_protocol"
+                                        else "sfsymbols:magnifyingglass" if action_button_3_action == "view_similar"
+                                        else "sfsymbols:star",
+                                "destructive": action_button_3_action in ["emergency_protocol"],
+                                "authenticationRequired": action_button_3_action in ["emergency_protocol", "send_security", "custom_action"]
+                              } %}
+                              {% set actions_list = actions_list + [action_3] %}
+                              {% endif %}
+                              {{ actions_list }}
+                              {% else %}
+                              []
+                              {% endif %}
             
                 - delay:
                     hours: 0
@@ -870,6 +1177,179 @@ actions:
           until:
             - condition: template
               value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
+  # Action Button Handlers (Dev Branch Feature)
+  - alias: Handle Action Button Presses
+    if:
+      - condition: trigger
+        id:
+          - Action Button 1
+          - Action Button 2
+          - Action Button 3
+          - Clip Action Button 1
+          - Clip Action Button 2
+          - Clip Action Button 3
+    then:
+      - variables:
+          button_action: >-
+            {% if trigger.id == "Action Button 1" or trigger.id == "Clip Action Button 1" %}
+            {{ action_button_1_action }}
+            {% elif trigger.id == "Action Button 2" or trigger.id == "Clip Action Button 2" %}
+            {{ action_button_2_action }}
+            {% elif trigger.id == "Action Button 3" or trigger.id == "Clip Action Button 3" %}
+            {{ action_button_3_action }}
+            {% else %}
+            ""
+            {% endif %}
+          button_data: >-
+            {% if trigger.id == "Action Button 1" or trigger.id == "Clip Action Button 1" %}
+            {{ action_button_1_data }}
+            {% elif trigger.id == "Action Button 2" or trigger.id == "Clip Action Button 2" %}
+            {{ action_button_2_data }}
+            {% elif trigger.id == "Action Button 3" or trigger.id == "Clip Action Button 3" %}
+            {{ action_button_3_data }}
+            {% else %}
+            ""
+            {% endif %}
+          event_id: "{{ trigger.event.data.action.split('_')[-1] }}"
+      - choose:
+          # View Live Camera
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'view_live_camera' }}"
+            sequence:
+              - action: camera.play_stream
+                target:
+                  entity_id: "{{ input_camera }}"
+                data:
+                  media_player: "{{ button_data if button_data else 'media_player.everywhere' }}"
+          # View Frigate Dashboard
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'view_frigate_dashboard' }}"
+            sequence:
+              - action: notify.persistent_notification
+                data:
+                  title: "Frigate Dashboard"
+                  message: "Opening Frigate dashboard for {{ camera_name }}"
+          # Download Snapshot
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'download_snapshot' }}"
+            sequence:
+              - action: downloader.download_file
+                data:
+                  url: "{{ host }}{{ image }}"
+                  subdir: "{{ sub_dir }}"
+                  filename: "{{ event_id }}_manual_snapshot.jpg"
+                  overwrite: true
+          # Download Clip
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'download_clip' }}"
+            sequence:
+              - action: downloader.download_file
+                data:
+                  url: "{{ host }}{{ video }}"
+                  subdir: "{{ sub_dir }}"
+                  filename: "{{ event_id }}_manual_clip.mp4"
+                  overwrite: true
+          # Mark as Reviewed
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'mark_reviewed' }}"
+            sequence:
+              - action: logbook.log
+                data:
+                  name: "Frigate Event Reviewed"
+                  message: "Event {{ event_id }} for {{ camera_name }} marked as reviewed"
+                  entity_id: "{{ input_camera }}"
+          # Silence notifications
+          - conditions:
+              - condition: template
+                value_template: "{{ 'silence' in button_action }}"
+            sequence:
+              - action: input_boolean.turn_on
+                target:
+                  entity_id: "input_boolean.frigate_{{ camera }}_silenced"
+                continue_on_error: true
+              - delay:
+                  minutes: "{{ 30 if '30min' in button_action else 60 }}"
+              - action: input_boolean.turn_off
+                target:
+                  entity_id: "input_boolean.frigate_{{ camera }}_silenced"
+                continue_on_error: true
+          # Dismiss notification
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'dismiss_notification' }}"
+            sequence:
+              - repeat:
+                  for_each: "{{ notify_names }}"
+                  sequence:
+                    - action: notify.{{ repeat.item }}
+                      data:
+                        message: "clear_notification"
+                        data:
+                          tag: "{{ event_id }}"
+          # Toggle Camera
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'toggle_camera' }}"
+            sequence:
+              - action: switch.toggle
+                target:
+                  entity_id: "{{ button_data if button_data else 'switch.' + camera + '_detect' }}"
+          # Custom Service Call
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'custom_service' }}"
+            sequence:
+              - action: "{{ button_data.split('.')[0] }}.{{ button_data.split('.')[1] }}"
+                target:
+                  entity_id: "{{ button_data.split('|')[1] if '|' in button_data else '' }}"
+                continue_on_error: true
+          # Run Automation
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'run_automation' }}"
+            sequence:
+              - action: automation.trigger
+                target:
+                  entity_id: "{{ button_data if button_data else 'automation.frigate_action' }}"
+                continue_on_error: true
+          # Share Clip
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'share_clip' }}"
+            sequence:
+              - action: notify.telegram
+                data:
+                  title: "Frigate Event - {{ camera_name }}"
+                  message: "Shared event from {{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                  data:
+                    video:
+                      - url: "{{ host }}{{ video }}"
+                        caption: "Event: {{ event_id }}"
+                continue_on_error: true
+          # Emergency Protocol
+          - conditions:
+              - condition: template
+                value_template: "{{ button_action == 'emergency_protocol' }}"
+            sequence:
+              - action: script.emergency_alert
+                continue_on_error: true
+              - action: logbook.log
+                data:
+                  name: "Emergency Protocol Activated"
+                  message: "Emergency protocol triggered by Frigate event {{ event_id }}"
+          # Default/Unknown action
+        default:
+          - action: logbook.log
+            data:
+              name: "Action Button Pressed"
+              message: "Button action: {{ button_action }} for event {{ event_id }}"
+              entity_id: "{{ input_camera }}"
+    enabled: true
 trigger_variables:
   frigate_topic: frigate/reviews
 variables:
@@ -888,12 +1368,27 @@ variables:
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
   # Development/Debug variables
-  debug_enabled: !input enable_debug_logs
-  debug_level: !input debug_log_level
-  retry_count: !input retry_attempts
-  operation_timeout: !input timeout_duration
-  experimental_enabled: !input experimental_features
-  performance_tracking: !input performance_monitoring
+  enable_debug_logs: !input enable_debug_logs
+  debug_log_level: !input debug_log_level
+  retry_attempts: !input retry_attempts
+  timeout_duration: !input timeout_duration
+  experimental_features: !input experimental_features
+  performance_monitoring: !input performance_monitoring
+  
+  # New action button variables
+  enable_action_buttons: !input enable_action_buttons
+  action_button_1_text: !input action_button_1_text
+  action_button_1_action: !input action_button_1_action
+  action_button_1_data: !input action_button_1_data
+  action_button_2_text: !input action_button_2_text
+  action_button_2_action: !input action_button_2_action
+  action_button_2_data: !input action_button_2_data
+  action_button_3_text: !input action_button_3_text
+  action_button_3_action: !input action_button_3_action
+  action_button_3_data: !input action_button_3_data
+  action_button_style: !input action_button_style
+  action_timeout: !input action_timeout
+  persistent_actions: !input persistent_actions
   event: "{{ trigger.payload_json }}"
   type: "{{event['type']}}"
   review_id: "{{event['after']['id']}}"

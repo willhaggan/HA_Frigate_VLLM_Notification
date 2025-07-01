@@ -40,6 +40,24 @@ New AI models added for testing:
 - **Enhanced Debugging**: Detailed logging and troubleshooting tools
 - **Timeout Management**: Configurable operation timeouts
 
+### 📱 Interactive Notification Action Buttons (New!)
+Advanced notification action buttons with customizable functionality:
+- **Up to 3 Action Buttons**: Fully customizable button text and actions
+- **Smart Icons**: Automatic icon assignment based on action type
+- **Multiple Action Types**:
+  - View Live Camera Feed
+  - Download Snapshot/Clip
+  - Mark Event as Reviewed
+  - Silence Notifications (30min/1hour)
+  - Toggle Camera Detection
+  - Run Custom Automations
+  - Emergency Protocol Activation
+  - Share Clips to Telegram
+  - Custom Service Calls
+- **Enhanced Security**: Authentication required for sensitive actions
+- **Visual Styling**: Multiple button styles and timeout options
+- **Persistent Actions**: Keep buttons active after notification dismissal
+
 ## 📋 Development Configuration
 
 ### New Input Options
@@ -53,6 +71,30 @@ Debug:
   timeout_duration: 30-300 seconds (default: 60)
   experimental_features: true/false
   performance_monitoring: true/false
+
+# Notification Action Buttons (New in Dev)
+Notification Options:
+  enable_action_buttons: true/false
+  
+  # Button 1 Configuration
+  action_button_1_text: "View Live"
+  action_button_1_action: view_live_camera/download_snapshot/etc.
+  action_button_1_data: "media_player.living_room" # Optional data
+  
+  # Button 2 Configuration  
+  action_button_2_text: "Dismiss"
+  action_button_2_action: dismiss_notification/toggle_camera/etc.
+  action_button_2_data: "switch.camera_detect" # Optional data
+  
+  # Button 3 Configuration (Optional)
+  action_button_3_text: "Share"
+  action_button_3_action: share_clip/emergency_protocol/etc.
+  action_button_3_data: "" # Optional data
+  
+  # Advanced Button Settings
+  action_button_style: default/colored/icons_only/text_only/large
+  action_timeout: 30 # Minutes (0 = no timeout)
+  persistent_actions: true/false
 ```
 
 ### Development Variables
