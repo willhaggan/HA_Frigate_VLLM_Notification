@@ -257,16 +257,16 @@ blueprint:
                max: 300
                step: 1
                mode: slider
-        temperature:
-          name: Response Creativity 
-          description: Lower is more accurate, higher is more creative.
-          default: 0.5
-          selector:
-            number:
-               min: 0.0
-               max: 1.0
-               step: 0.1
-               mode: slider 
+       # temperature:
+       #   name: Response Creativity 
+       #   description: Lower is more accurate, higher is more creative.
+       #   default: 0.5
+       #   selector:
+       #     number:
+       #        min: 0.0
+       #        max: 1.0
+       #        step: 0.1
+       #        mode: slider 
         in_gen_title:
           name: Generate Title
           description: AI generated notification title.
@@ -353,16 +353,16 @@ blueprint:
                max: 300
                step: 1
                mode: slider
-        temperature2:
-          name: Response Creativity
-          description: Lower is more accurate, higher is more creative.
-          default: 0.5
-          selector:
-            number:
-               min: 0.0
-               max: 1.0
-               step: 0.1
-               mode: slider 
+        #temperature2:
+        #  name: Response Creativity
+        #  description: Lower is more accurate, higher is more creative.
+        #  default: 0.5
+        #  selector:
+        #    number:
+        #       min: 0.0
+        #       max: 1.0
+        #       step: 0.1
+        #       mode: slider 
         max_frames:
           name: Max Frames
           description: How many frames to analyse for clip.
@@ -654,7 +654,7 @@ actions:
                         include_filename: false
                         target_width: !input target_width
                         max_tokens: !input tokens
-                        temperature: !input temperature
+                        #temperature: !input temperature
                         generate_title: "{{gen_title}}"
                       response_variable: response
                     - delay:
@@ -758,7 +758,7 @@ actions:
                     include_filename: false
                     target_width: !input target_width2
                     max_tokens: !input tokens2
-                    temperature: !input temperature2
+                    #temperature: !input temperature2
                     generate_title: "{{gen_title2}}"
                     message: !input prompt2
 
@@ -847,7 +847,7 @@ variables:
         {% endif %} 
         {% endfor %} 
         {{ ns.device_names }}
-  after_zones: "{{ event['after']['data']['zones'] | default([]) }}"
+  after_zones: "{{ event['after']['data']['zones'] | lower | default([]) }}"
   zone_entered: >-
     {{ zone_names | length == 0 or ((zone_names | select('in', after_zones) | list |
     length) > 0) }}
