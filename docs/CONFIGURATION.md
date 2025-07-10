@@ -151,7 +151,6 @@ Visitor Analysis Prompt: |
 # Image processing
 Pixels: 1080          # Width in pixels (512-1920)
 Tokens: 100           # Maximum response tokens (1-300)
-Response Creativity: 0.5  # Temperature (0.0-1.0)
 
 # Processing delays
 Delay Before Image: 2     # Seconds to wait before analysis
