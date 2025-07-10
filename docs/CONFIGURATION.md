@@ -28,7 +28,7 @@ Frigate Camera: camera.front_door
 ```yaml
 # Select specific zones for monitoring
 Frigate Zones: 
-  - frontdoor
+  - front_door
 
 # Or use custom zone names
 Custom Zones:
