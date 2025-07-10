@@ -28,8 +28,7 @@ Frigate Camera: camera.front_door
 ```yaml
 # Select specific zones for monitoring
 Frigate Zones: 
-  - binary_sensor.front_door_person_motion
-  - binary_sensor.driveway_vehicle_motion
+  - frontdoor
 
 # Or use custom zone names
 Custom Zones:
@@ -204,7 +203,6 @@ Security Video Prompt: |
 # Video analysis settings
 Pixels: 1080              # Video width (512-1920)
 Tokens: 100               # Maximum response tokens
-Response Creativity: 0.5  # Temperature
 Max Frames: 3             # Frames to analyze (1-10)
 
 # Processing delays
