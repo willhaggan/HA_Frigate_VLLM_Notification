@@ -245,8 +245,8 @@ Clip Download Max Wait Time: 30   # Seconds (1-120)
 ```yaml
 # Select mobile devices for notifications
 Notify Devices:
-  - device_tracker.johns_phone
-  - device_tracker.janes_iphone
+  - mobile_app_johns_phone
+  - mobile_app_janes_iphone
 ```
 
 ### Click Actions
