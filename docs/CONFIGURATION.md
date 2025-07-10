@@ -28,8 +28,7 @@ Frigate Camera: camera.front_door
 ```yaml
 # Select specific zones for monitoring
 Frigate Zones: 
-  - binary_sensor.front_door_person_motion
-  - binary_sensor.driveway_vehicle_motion
+  - front_door_person_motion
 
 # Or use custom zone names
 Custom Zones:
