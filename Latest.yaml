@@ -479,10 +479,17 @@ blueprint:
               options:
               - label: Lovelace URL
                 value: /Lovelace
-              - label: View Downloaded Snapshot
-                value: "{{image_local}}"
-              - label: View Frigate Snapshot
-                value: "{{image}}"
+              - label: View Snapshot
+                value: "{{image}"
+              - label: View Clip
+                value: "{{video}}"
+              - label: View Thumbnail
+                value: "{{thumb}}"
+              - label: View Snapshot with bounding box
+                value: "{{image}}?bbox=1box=1"
+              - label: View Review GIF
+                value: "{{gif}}"
+              mode: dropdown
               custom_value: true
               
         click_action2:
@@ -494,14 +501,17 @@ blueprint:
               options:
               - label: Lovelace URL
                 value: /Lovelace
-              - label: View Downloaded Snapshot
-                value: "{{image_local}}"
-              - label: View Frigate Snapshot
-                value: "{{image}}"
-              - label: View Downloaded Clip
-                value: "{{video_local}}"
-              - label: View Frigate Clip
+              - label: View Snapshot
+                value: "{{image}"
+              - label: View Clip
                 value: "{{video}}"
+              - label: View Thumbnail
+                value: "{{thumb}}"
+              - label: View Snapshot with bounding box
+                value: "{{image}}?bbox=1box=1"
+              - label: View Review GIF
+                value: "{{gif}}"
+              mode: dropdown
               custom_value: true
               
         cooldown:
