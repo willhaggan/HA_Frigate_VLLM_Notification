@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification Latest (v0.41)
+  name: Frigate LLM Notification Latest (v0.42)
   author: whag
   description: >
      Basic requirements:<br />
@@ -16,23 +16,24 @@ blueprint:
      - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br /><br />
      Description: <br />
      Use LLM Vision to analyse frigate snapshots and clips and send notifications via the Home Assistant companion app. <br />
-     Monitors MQTT frigate/reviews topic of types [new] and [end]. <br />
-     The Downloader integration has been used for storing the frigate files locally before sending them to LLM. In my experience this has improved the reliability.
+     Monitors MQTT frigate/reviews topic of types [new],[update] and [end]. <br />
+     The Downloader integration has been used for storing the frigate files locally before sending them to LLM. In my experience this has improved the reliability for usingh LLM Vision with Frigate.
      Note that the downloader folder will need maintained separately (i.e. old files deleted or backed up). This can be achieved automatically via a shell command or similar <br />
      This automation runs in parallel mode. <br /><br />
      Tested on Android only. <br /><br />
      
-     Variables which may be useful for frigate message and AI prompts
+     Variables which may be useful for the custom message and AI prompts
        - {{input_objects}} = Objects required<br />
        - {{objects}} = Objects found<br />
        - {{input_camera_name}} = Camera required<br />
        - {{camera_name}} = Camera triggered<br />
        - {{zone_names}} = Zones required<br />
-       - {{after_zones}} = Zones triggered<br />
-       - {{detections{0] = Event ID 1 <br />
-       - {{detections{1] = Event ID 2 <br />
+       - {{before_zones}} = Zones triggered first<br />
+       - {{after_zones}} = Zones triggered last<br />
+       - {{detections{0] = Event ID 1 (i.e.triggering event)<br />
+       - {{detections{1] = Event ID 2<br />
 
-     Version: v 0.41
+     Version: v 0.42
 
   domain: automation
   input:
@@ -51,6 +52,17 @@ blueprint:
               filter:
                 - integration: frigate
                   domain: camera
+        in_severity:
+          name: Severity
+          description: Event Severity Detection or Alert
+          default: alert
+          selector:
+            select:
+              multiple: false
+              custom_value: false
+              options:
+                - alert
+                - detection
         in_zones:
           name: Frigate Zones
           description: Zones required for the alert. Filter will show all frigate devices(zones and cameras.)
@@ -172,7 +184,7 @@ blueprint:
         model:
           name: AI Model
           description: AI Model
-          default: gemini-2.0-flash
+          default: gemini-1.5-flash
           selector:
             select:
               options: 
@@ -257,16 +269,6 @@ blueprint:
                max: 300
                step: 1
                mode: slider
-       # temperature:
-       #   name: Response Creativity 
-       #   description: Lower is more accurate, higher is more creative.
-       #   default: 0.5
-       #   selector:
-       #     number:
-       #        min: 0.0
-       #        max: 1.0
-       #        step: 0.1
-       #        mode: slider 
         in_gen_title:
           name: Generate Title
           description: AI generated notification title.
@@ -353,16 +355,6 @@ blueprint:
                max: 300
                step: 1
                mode: slider
-        #temperature2:
-        #  name: Response Creativity
-        #  description: Lower is more accurate, higher is more creative.
-        #  default: 0.5
-        #  selector:
-        #    number:
-        #       min: 0.0
-        #       max: 1.0
-        #       step: 0.1
-        #       mode: slider 
         max_frames:
           name: Max Frames
           description: How many frames to analyse for clip.
@@ -857,14 +849,15 @@ variables:
         {% endif %} 
         {% endfor %} 
         {{ ns.device_names }}
+  before_zones: "{{ event['before']['data']['zones'] | lower | default([]) }}"
   after_zones: "{{ event['after']['data']['zones'] | lower | default([]) }}"
   zone_entered: >-
-    {{ zone_names | length == 0 or ((zone_names | select('in', after_zones) | list |
-    length) > 0) }}
+    {{ zone_names | length == 0 or ((zone_names | select('in', (before_zones + after_zones)) |list |length) > 0) }}
   all_zones_entered: >-
-    {{true if (zone_names | reject('in',after_zones) | list | length == 0 and all_zones) or all_zones == false else false }}
+    {{true if (zone_names | reject('in',(before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
   zone_match: "{{zone_entered and all_zones_entered}}"
-  severity: "{{event['after']['severity'] == 'alert'}}"
+  input_severity: !input_in_severity
+  severity: "{{event['after']['severity'] or event['before']['severity'] == input_severity}}"
   notify_names: >-
     {% set ns = namespace(device_names=[]) %} 
     {% for device_id in notify_devices%}
@@ -895,10 +888,10 @@ variables:
   image: /api/frigate/notifications/{{id}}/snapshot.jpg
   image_local: "{{root_dir}}{{sub_dir}}{{id}}_snapshot.jpg"
   gif: /api/frigate/notifications/{{review_id}}/review_preview.gif
-  frigate_msg: !input in_frigate_msg
+  custom_msg: !input in_custom_msg
   title_image: !input in_title_image
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
 mode: parallel
-max: 2
+max: 4
