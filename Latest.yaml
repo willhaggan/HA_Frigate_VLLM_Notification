@@ -242,7 +242,7 @@ blueprint:
                    concentrate on the {{input_objects| join(',')|replace('_', ' ')}} if seen within
                    the {{zone_names| join(' and ,')|replace('_',' ')}}. 
                    Any person approaching the camera should take priority over all other events.
-                   If you see a known person from memory, mention this so the response.
+                   If you see a known person from memory, mention this in the response.
                    Do not mention the prompt or describe the environment in your response.
                    The response is an intial alert for a mobile phone security notification. 
           selector:
@@ -326,7 +326,7 @@ blueprint:
           description: Model prompt.
           default: Analyse the video clip which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}
                    The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}
-                   Focus on the objects referenced which are entering the areas of interest and describe what they are doing.
+                   Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
                    Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
                    Do not mention the prompt or describe the environment in your response.  
                    Your response will be used for a mobile phone notification message with the clip attached.
