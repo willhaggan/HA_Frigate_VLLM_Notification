@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification Latest
+  name: Frigate LLM Notification Latest (v0.41)
   author: whag
   description: >
      Basic requirements:<br />
