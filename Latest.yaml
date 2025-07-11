@@ -221,7 +221,7 @@ blueprint:
           default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert"
           selector:
             text:
-        in_frigate_msg:
+        in_custom_msg:
           name: No AI Notification Message
           description: Inital notificaion message if not using LLM Vision for the snapshot analysis.
           default: "A {{objects| join(' and a ')|replace('_', ' ')}} was detected in the {{after_zones| join(' and the ')|replace('_', ' ' )}}" 
@@ -671,7 +671,7 @@ actions:
                   else:
                     - variables:
                         title: "{{title_image}}"
-                        msg: "{{frigate_msg}}"
+                        msg: "{{custom_msg}}"
                 - alias: Send Intial notification to notify devices
                   repeat:
                     for_each: "{{notify_names}}"
