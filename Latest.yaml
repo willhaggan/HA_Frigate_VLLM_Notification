@@ -856,7 +856,7 @@ variables:
   all_zones_entered: >-
     {{true if (zone_names | reject('in',(before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
   zone_match: "{{zone_entered and all_zones_entered}}"
-  input_severity: !input_in_severity
+  input_severity: !input in_severity
   severity: "{{event['after']['severity'] or event['before']['severity'] == input_severity}}"
   notify_names: >-
     {% set ns = namespace(device_names=[]) %} 
