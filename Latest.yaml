@@ -54,16 +54,18 @@ blueprint:
                   domain: camera
         in_severity:
           name: Severity
-          description: Event Severity Detection or Alert
-          default: alert
+          description: Frigate event severity.
+          default: 
+            - alert
+            - detection
           selector:
             select:
               options:
-                - label: Alerts
+                - label: Alert
                   value: alert
-                - label: Detections
+                - label: Detection
                   value: detection
-              multiple: false
+              multiple: true
         in_zones:
           name: Frigate Zones
           description: Zones required for the alert. Filter will show all frigate devices(zones and cameras.)
@@ -858,7 +860,8 @@ variables:
     {{true if (zone_names | reject('in',(before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
   zone_match: "{{zone_entered and all_zones_entered}}"
   input_severity: !input in_severity
-  severity: "{{event['after']['severity'] or event['before']['severity'] == input_severity}}"
+  severity: "{{event['before']['severity'] + event['after']['severity']}}"
+  severity_match: "{{input_severity|select('in', severity)|list|length > 0}}"
   notify_names: >-
     {% set ns = namespace(device_names=[]) %} 
     {% for device_id in notify_devices%}
