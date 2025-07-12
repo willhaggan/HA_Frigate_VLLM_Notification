@@ -58,11 +58,12 @@ blueprint:
           default: alert
           selector:
             select:
-              multiple: false
-              custom_value: false
               options:
-                - alert
-                - detection
+                - label: Alerts
+                  value: alert
+                - label: Detections
+                  value: detection
+              multiple: false
         in_zones:
           name: Frigate Zones
           description: Zones required for the alert. Filter will show all frigate devices(zones and cameras.)
