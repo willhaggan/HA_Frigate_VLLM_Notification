@@ -562,7 +562,7 @@ conditions:
     value_template: "{{zone_match}}"
     alias: Valid Zone
   - condition: template
-    value_template: "{{severity}}"
+    value_template: "{{severity_match}}"
     alias: Valid Alert
 actions:
   - action: logbook.log
