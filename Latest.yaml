@@ -475,7 +475,7 @@ blueprint:
               - label: Lovelace URL
                 value: /Lovelace
               - label: View Snapshot
-                value: "{{image}"
+                value: "{{image}}"
               - label: View Clip
                 value: "{{video}}"
               - label: View Thumbnail
@@ -497,7 +497,7 @@ blueprint:
               - label: Lovelace URL
                 value: /Lovelace
               - label: View Snapshot
-                value: "{{image}"
+                value: "{{image}}"
               - label: View Clip
                 value: "{{video}}"
               - label: View Thumbnail
