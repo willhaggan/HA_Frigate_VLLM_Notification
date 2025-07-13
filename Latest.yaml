@@ -599,209 +599,211 @@ actions:
         id:
           - New event
     then:
-      - alias: Run Custom Actions New 
-        choose:
-          - conditions: "{{action1|length != 0}}"
-            sequence: !input in_action1
       - delay:
           hours: 0
           minutes: 0
           seconds: 2
           milliseconds: 0
-      - alias: Repeat Until file exists or 2 retries
-        repeat:
-          sequence:
-            - action: downloader.download_file
-              continue_on_error: true
-              metadata: {}
-              data:
-                overwrite: true
-                url: "{{host}}{{image}}"
-                subdir: "{{sub_dir}}"
-                filename: "{{id}}_snapshot.jpg"
-            - alias: Wait for downloader to complete
-              wait_for_trigger:
-                - trigger: event
-                  event_type: downloader_download_completed
-                  event_data:
-                    url: "{{host}}{{image}}"
-                    filename: "{{id}}_snapshot.jpg"
-                  id: image_exists
-              continue_on_timeout: true
-              timeout:
-                hours: 0
-                minutes: 0
-                seconds: !input download_image_wait
-                milliseconds: 0
-            - alias: If file exists run LLM Image Analyzer and send notification
-              if:
-                - condition: template
-                  value_template: "{{ wait.trigger.id == 'image_exists' }}"
-              then:
-                - delay:
-                    hours: 0
-                    minutes: 0
-                    seconds: !input delay_image
-                    milliseconds: 0
-                - if:
-                    - condition: template
-                      value_template: "{{use_llm_image}}"
-                  then:
-                    - action: llmvision.image_analyzer
-                      data:
-                        provider: !input provider
-                        model: !input model
-                        remember: !input use_remember
-                        expose_images: !input expose_image
-                        use_memory: !input use_memory
-                        image_file: "{{image_local}}"
-                        message: !input prompt
-                        include_filename: false
-                        target_width: !input target_width
-                        max_tokens: !input tokens
-                        #temperature: !input temperature
-                        generate_title: "{{gen_title}}"
-                      response_variable: response
-                    - delay:
-                        hours: 0
-                        minutes: 0
-                        seconds: 5
-                        milliseconds: 0
-                    - variables:
-                        title: "{{response.response_title if gen_title else title_image}}"
-                        msg: "{{response.response_text}}"
-                        
-                  else:
-                    - variables:
-                        title: "{{title_image}}"
-                        msg: "{{custom_msg}}"
-                - alias: Send Intial notification to notify devices
-                  repeat:
-                    for_each: "{{notify_names}}"
-                    sequence:
-                      - action: notify.{{ repeat.item }}
+      - parallel:
+        - alias: Run Custom Actions New 
+          choose:
+            - conditions: "{{action1|length != 0}}"
+              sequence: !input in_action1
+        - alias: Repeat Until file exists or 2 retries
+          repeat:
+            sequence:
+              - action: downloader.download_file
+                continue_on_error: true
+                metadata: {}
+                data:
+                  overwrite: true
+                  url: "{{host}}{{image}}"
+                  subdir: "{{sub_dir}}"
+                  filename: "{{id}}_snapshot.jpg"
+              - alias: Wait for downloader to complete
+                wait_for_trigger:
+                  - trigger: event
+                    event_type: downloader_download_completed
+                    event_data:
+                      url: "{{host}}{{image}}"
+                      filename: "{{id}}_snapshot.jpg"
+                    id: image_exists
+                continue_on_timeout: true
+                timeout:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input download_image_wait
+                  milliseconds: 0
+              - alias: If file exists run LLM Image Analyzer and send notification
+                if:
+                  - condition: template
+                    value_template: "{{ wait.trigger.id == 'image_exists' }}"
+                then:
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: !input delay_image
+                      milliseconds: 0
+                  - if:
+                      - condition: template
+                        value_template: "{{use_llm_image}}"
+                    then:
+                      - action: llmvision.image_analyzer
                         data:
-                          title: "{{title}}"
-                          message: "{{msg}}"
+                          provider: !input provider
+                          model: !input model
+                          remember: !input use_remember
+                          expose_images: !input expose_image
+                          use_memory: !input use_memory
+                          image_file: "{{image_local}}"
+                          message: !input prompt
+                          include_filename: false
+                          target_width: !input target_width
+                          max_tokens: !input tokens
+                          #temperature: !input temperature
+                          generate_title: "{{gen_title}}"
+                        response_variable: response
+                      - delay:
+                          hours: 0
+                          minutes: 0
+                          seconds: 5
+                          milliseconds: 0
+                      - variables:
+                          title: "{{response.response_title if gen_title else title_image}}"
+                          msg: "{{response.response_text}}"
+                          
+                    else:
+                      - variables:
+                          title: "{{title_image}}"
+                          msg: "{{custom_msg}}"
+                  - alias: Send Intial notification to notify devices
+                    repeat:
+                      for_each: "{{notify_names}}"
+                      sequence:
+                        - action: notify.{{ repeat.item }}
                           data:
-                            image: "{{thumb}}"
-                            entity_id: "{{input_camera}}"
-                            url: !input click_action1
-                            clickAction: !input click_action1
-                            group: "{{camera}}-frigate-notification"
-                            tag: "{{id}}"
-                            ttl: 0
-                            priority: high
-            - delay:
-                hours: 0
-                minutes: !input cooldown
-                seconds: 0
-                milliseconds: 0
-              alias: Cooldown
-          until:
-            - condition: template
-              value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
-    enabled: true
+                            title: "{{title}}"
+                            message: "{{msg}}"
+                            data:
+                              image: "{{thumb}}"
+                              entity_id: "{{input_camera}}"
+                              url: !input click_action1
+                              clickAction: !input click_action1
+                              group: "{{camera}}-frigate-notification"
+                              tag: "{{id}}"
+                              ttl: 0
+                              priority: high
+              - delay:
+                  hours: 0
+                  minutes: !input cooldown
+                  seconds: 0
+                  milliseconds: 0
+                alias: Cooldown
+            until:
+              - condition: template
+                value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
+      enabled: true
   - alias: Event is end Do LLM video analysis and send notification
     if:
       - condition: trigger
         id:
           - End event
     then:
-      - alias: Run Custom Actions End 
-        choose:
-          - conditions: "{{action2|length != 0}}"
-            sequence: !input in_action2
       - delay:
           hours: 0
           minutes: 0
           seconds: 5
           milliseconds: 0
-      - repeat:
-          sequence:
-            - action: downloader.download_file
-              continue_on_error: true
-              metadata: {}
-              data:
-                overwrite: true
-                url: "{{host}}{{video}}"
-                subdir: "{{sub_dir}}"
-                filename: "{{id}}_clip.mp4"
-            - alias: Wait for downloader to complete
-              wait_for_trigger:
-                - trigger: event
-                  event_type: downloader_download_completed
-                  event_data:
-                    url: "{{host}}{{video}}"
-                    filename: "{{id}}_clip.mp4"
-                  id: clip_exists
-              continue_on_timeout: true
-              timeout:
-                hours: 0
-                minutes: 0
-                seconds: !input download_clip_wait
-                milliseconds: 0
-            - delay:
-                hours: 0
-                minutes: 0
-                seconds: !input delay_clip
-                milliseconds: 0
-            - if:
-                - condition: template
-                  value_template: "{{wait.trigger.id == 'clip_exists'}}"
-              then:
-                - action: llmvision.video_analyzer
-                  metadata: {}
-                  data:
-                    provider: !input provider
-                    model: !input model
-                    remember: !input use_remember2
-                    expose_images: !input expose_clip
-                    use_memory: !input use_memory2
-                    video_file: "{{video_local}}"
-                    max_frames: !input max_frames
-                    include_filename: false
-                    target_width: !input target_width2
-                    max_tokens: !input tokens2
-                    #temperature: !input temperature2
-                    generate_title: "{{gen_title2}}"
-                    message: !input prompt2
-
-                  response_variable: response
-                - delay:
-                    hours: 0
-                    minutes: 0
-                    seconds: 1
-                    milliseconds: 0
-                - alias: Update notification to notify devices
-                  repeat:
-                    for_each: "{{notify_names}}"
-                    sequence:
-                      - action: notify.{{ repeat.item }}
-                        data:
-                          title: "{{response.title if gen_title2 else title_clip}}"
-                          message: "{{response.response_text}}"
+      - parallel:
+        - alias: Run Custom Actions End 
+          choose:
+            - conditions: "{{action2|length != 0}}"
+              sequence: !input in_action2
+        - repeat:
+            sequence:
+              - action: downloader.download_file
+                continue_on_error: true
+                metadata: {}
+                data:
+                  overwrite: true
+                  url: "{{host}}{{video}}"
+                  subdir: "{{sub_dir}}"
+                  filename: "{{id}}_clip.mp4"
+              - alias: Wait for downloader to complete
+                wait_for_trigger:
+                  - trigger: event
+                    event_type: downloader_download_completed
+                    event_data:
+                      url: "{{host}}{{video}}"
+                      filename: "{{id}}_clip.mp4"
+                    id: clip_exists
+                continue_on_timeout: true
+                timeout:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input download_clip_wait
+                  milliseconds: 0
+              - delay:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input delay_clip
+                  milliseconds: 0
+              - if:
+                  - condition: template
+                    value_template: "{{wait.trigger.id == 'clip_exists'}}"
+                then:
+                  - action: llmvision.video_analyzer
+                    metadata: {}
+                    data:
+                      provider: !input provider
+                      model: !input model
+                      remember: !input use_remember2
+                      expose_images: !input expose_clip
+                      use_memory: !input use_memory2
+                      video_file: "{{video_local}}"
+                      max_frames: !input max_frames
+                      include_filename: false
+                      target_width: !input target_width2
+                      max_tokens: !input tokens2
+                      #temperature: !input temperature2
+                      generate_title: "{{gen_title2}}"
+                      message: !input prompt2
+  
+                    response_variable: response
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: 1
+                      milliseconds: 0
+                  - alias: Update notification to notify devices
+                    repeat:
+                      for_each: "{{notify_names}}"
+                      sequence:
+                        - action: notify.{{ repeat.item }}
                           data:
-                            video: "{{gif}}"
-                            image: "{{gif}}"
-                            entity_id: "{{input_camera}}"
-                            url: !input click_action2
-                            clickAction: !input click_action2
-                            group: "{{camera}}-frigate-notification"
-                            tag: "{{id}}"
-                            interruption-level: active
-                            ttl: 0
-                            priority: high
-            
-                - delay:
-                    hours: 0
-                    minutes: !input cooldown
-                    seconds: 0
-                    milliseconds: 0
-                  alias: Cooldown
-          until:
-            - condition: template
-              value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
+                            title: "{{response.title if gen_title2 else title_clip}}"
+                            message: "{{response.response_text}}"
+                            data:
+                              video: "{{gif}}"
+                              image: "{{gif}}"
+                              entity_id: "{{input_camera}}"
+                              url: !input click_action2
+                              clickAction: !input click_action2
+                              group: "{{camera}}-frigate-notification"
+                              tag: "{{id}}"
+                              interruption-level: active
+                              ttl: 0
+                              priority: high
+              
+                  - delay:
+                      hours: 0
+                      minutes: !input cooldown
+                      seconds: 0
+                      milliseconds: 0
+                    alias: Cooldown
+            until:
+              - condition: template
+                value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
 trigger_variables:
   frigate_topic: frigate/reviews
 variables:
