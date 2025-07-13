@@ -702,7 +702,6 @@ actions:
             until:
               - condition: template
                 value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
-      enabled: true
   - alias: Event is end Do LLM video analysis and send notification
     if:
       - condition: trigger
