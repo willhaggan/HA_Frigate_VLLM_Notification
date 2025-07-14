@@ -481,7 +481,7 @@ blueprint:
               - label: View Thumbnail
                 value: "{{thumb}}"
               - label: View Snapshot with bounding box
-                value: "{{image}}?bbox=1box=1"
+                value: "{{image}}?bbox=1"
               - label: View Review GIF
                 value: "{{gif}}"
               mode: dropdown
@@ -503,7 +503,7 @@ blueprint:
               - label: View Thumbnail
                 value: "{{thumb}}"
               - label: View Snapshot with bounding box
-                value: "{{image}}?bbox=1box=1"
+                value: "{{image}}?bbox=1"
               - label: View Review GIF
                 value: "{{gif}}"
               mode: dropdown
