@@ -733,7 +733,7 @@ actions:
             - condition: template
               value_template: '{{use_llm_image}}'
             then:
-            - action: llmvision.video_analyzerr
+            - action: llmvision.video_analyzer
               data:
                 provider: !input provider_image
                 model: !input model_image
