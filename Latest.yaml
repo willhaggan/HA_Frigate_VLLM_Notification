@@ -1,28 +1,29 @@
 blueprint:
-  name: Frigate LLM Notification Latest (v0.5dev)
+  name: Frigate LLM Notification Latest (v0.5)
   author: whag
   description: "Basic requirements:<br /> - Home Assistant with an MQTT broker setup.
     <br /> - Frigate integration with MQTT setup. <br /> Link: https://github.com/blakeblackshear/frigate-hass-integration
     <br /> - LLM Vision integration with provider setup. <br /> Link: https://github.com/valentinfrlch/ha-llmvision
-    <br /> - Optional Downloader integration. (Ensure the Use Downloader Input is Set Accordingly) <br /> Link: https://www.home-assistant.io/integrations/downloader/<br
+    <br /> - Optional Downloader integration. (Ensure the Use Downloader Input is
+    Set Accordingly) <br /> Link: https://www.home-assistant.io/integrations/downloader/<br
     /><br />\nInformation:<br /> - Only suitable for one Frigate camera, use multiple
     instances of this automation for multiple cameras if required. <br /> - LLM Vision
     requires a provider setup for the automation to function, remember and memory
     options are optional. <br /><br /> Description: <br /> Use LLM Vision to analyse
     frigate snapshots and clips and send notifications via the Home Assistant companion
-    app. <br /> Monitors MQTT frigate/reviews topic of types [new] and [end].
-    <br /> If you decide to use the Downloader integration for storing the frigate files
-    locally before sending them to LLM the downloader folder will need
-    maintained separately (i.e. old files deleted or backed up). This can be achieved
-    automatically via a shell command or similar <br /> This automation runs in parallel
-    mode. <br /><br /> Tested on Android only. <br /><br />\nVariables which may be
-    useful for the custom message and AI prompts\n  - {{input_objects}} = Objects
-    required<br />\n  - {{objects}} = Objects found<br />\n  - {{input_camera_name}}
-    = Camera required<br />\n  - {{camera_name}} = Camera triggered<br />\n  - {{zone_names}}
+    app. <br /> Monitors MQTT frigate/reviews topic of types [new] and [end]. <br
+    /> If you decide to use the Downloader integration for storing the frigate files
+    locally before sending them to LLM the downloader folder will need maintained
+    separately (i.e. old files deleted or backed up). This can be achieved automatically
+    via a shell command or similar <br /> This automation runs in parallel mode. <br
+    /><br /> Tested on Android only. <br /><br />\nVariables which may be useful for
+    the custom message and AI prompts\n  - {{input_objects}} = Objects required<br
+    />\n  - {{objects}} = Objects found<br />\n  - {{input_camera_name}} = Camera
+    required<br />\n  - {{camera_name}} = Camera triggered<br />\n  - {{zone_names}}
     = Zones required<br />\n  - {{before_zones}} = Zones triggered first<br />\n  -
     {{after_zones}} = Zones triggered last<br />\n  - {{detections{0] = Event ID 1
     (i.e.triggering event)<br />\n  - {{detections{1] = Event ID 2<br />\n\nVersion:
-    v 0.5dev\n"
+    v 0.5\n"
   domain: automation
   input:
     frigate:
@@ -41,6 +42,7 @@ blueprint:
               - integration: frigate
                 domain:
                 - camera
+              reorder: false
         in_severity:
           name: Severity
           description: Frigate event severity.
@@ -179,7 +181,6 @@ blueprint:
           selector:
             config_entry:
               integration: llmvision
-        
         model_image:
           name: AI Model
           description: AI Model
@@ -211,7 +212,7 @@ blueprint:
               custom_value: true
               sort: false
         provider_clip:
-          name: Provider For Clip Analysis 
+          name: Provider For Clip Analysis
           description: Provoder to use for the clip analyse.
           selector:
             config_entry:
@@ -258,7 +259,9 @@ blueprint:
           default: '{{camera_name}} - {{sub_labels| join('','')|replace(''_'', ''
             '')}} Alert'
           selector:
-            text: {}
+            text:
+              multiple: false
+              multiline: false
         in_custom_msg:
           name: No AI Notification Message
           description: Inital notificaion message if not using LLM Vision for the
@@ -445,15 +448,16 @@ blueprint:
               max: 60.0
               step: 1.0
               mode: slider
-        frigate_retry_attempts: 
+        frigate_retry_attempts:
           name: Frigate Max Retry Amount
-          description: In the event the frigate clip is not available set the amount of times to retry fetching the file.
+          description: In the event the frigate clip is not available set the amount
+            of times to retry fetching the file.
           default: 3
           selector:
             number:
-              min: 1
-              max: 10
-              step: 1
+              min: 1.0
+              max: 10.0
+              step: 1.0
               mode: slider
         frigate_retry_seconds:
           name: Frigate Max Retry Delay In Seconds
@@ -461,9 +465,9 @@ blueprint:
           default: 1
           selector:
             number:
-              min: 1
-              max: 10
-              step: 1
+              min: 1.0
+              max: 10.0
+              step: 1.0
               mode: slider
     Downloader:
       name: Downloader Options
@@ -472,8 +476,9 @@ blueprint:
       input:
         in_use_downloader:
           name: Use The Downloader Integration
-          description: Store the image/clip locally using HA Downloader integration, and use the local files for LLM Vision analysis. If this input is false this section can be ignored.
-            LLM Vision.
+          description: Store the image/clip locally using HA Downloader integration,
+            and use the local files for LLM Vision analysis. If this input is false
+            this section can be ignored. LLM Vision.
           default: false
           selector:
             boolean: {}
@@ -616,8 +621,7 @@ blueprint:
           default: false
           selector:
             boolean: {}
-      
-  source_url: https://github.com/willhaggan/HA_Frigate_VLLM_Notification/blob/main/Latest.yaml
+  source_url: https://github.com/willhaggan/HA_Frigate_VLLM_Notification/blob/0.5-dev/Latest.yaml
 triggers:
 - trigger: mqtt
   topic: '{{frigate_topic}}'
@@ -647,37 +651,24 @@ conditions:
   alias: Valid Alert
 actions:
 - if:
-    - condition: template
-      value_template: '{{enable_log}}'
+  - condition: template
+    value_template: '{{enable_log}}'
   then:
-    - action: logbook.log
-      metadata: {}
-      data:
-        name: LLM Vision Frigate Notification log
-        entity_id: '{{this.entity_id}}'
-        message: '___Event type: {{type}}
-        ___Review id: {{review_id}}
-        ___Input camera: {{input_camera}}
-        ___Camera triggered: {{input_camera_name}}
-        ___Detections ID''s: {{detections}}
-        ___Detection 1 ID: {{id}}
-        ___Objects required: {{input_objects}}
-        ___Objects found: {{objects}}
-        ___Object match: {{objects_match}}
-        ___Sub Labels required: {{input_sub_labels}}
-        ___Sub Labels found: {{sub_labels}}
-        ___Sub Labels match: {{sub_labels_match}}
-        ___Zones required: {{zone_names}}
-        ___Zones triggered before: {{before_zones}}
-        ___Zones triggered after: {{after_zones}}
-        ___Zone match: {{zone_match}}
-        ___Notify devices: {{notify_names}}
-        ___Downloader root: {{root_dir}}
-        ___Downloader sub: {{sub_dir}}
-        ___Thumb url {{thumb}}
-        ___Snapshot url {{image}}
-        ___Clip url {{video}}
-        ___GIF url {{gif}}___'
+  - action: logbook.log
+    metadata: {}
+    data:
+      name: LLM Vision Frigate Notification log
+      entity_id: '{{this.entity_id}}'
+      message: '___Event type: {{type}} ___Review id: {{review_id}} ___Input camera:
+        {{input_camera}} ___Camera triggered: {{input_camera_name}} ___Detections
+        ID''s: {{detections}} ___Detection 1 ID: {{id}} ___Objects required: {{input_objects}}
+        ___Objects found: {{objects}} ___Object match: {{objects_match}} ___Sub Labels
+        required: {{input_sub_labels}} ___Sub Labels found: {{sub_labels}} ___Sub
+        Labels match: {{sub_labels_match}} ___Zones required: {{zone_names}} ___Zones
+        triggered before: {{before_zones}} ___Zones triggered after: {{after_zones}}
+        ___Zone match: {{zone_match}} ___Notify devices: {{notify_names}} ___Downloader
+        root: {{root_dir}} ___Downloader sub: {{sub_dir}} ___Thumb url {{thumb}} ___Snapshot
+        url {{image}} ___Clip url {{video}} ___GIF url {{gif}}___'
 - alias: Event is new start LLM image analysis and send notification
   if:
   - condition: trigger
@@ -702,32 +693,34 @@ actions:
           - condition: template
             value_template: '{{use_downloader}}'
           then:
-            - action: downloader.download_file
-              continue_on_error: true
-              metadata: {}
-              data:
-                overwrite: true
+          - action: downloader.download_file
+            continue_on_error: true
+            metadata: {}
+            data:
+              overwrite: true
+              url: '{{host}}{{image}}'
+              subdir: '{{sub_dir}}'
+              filename: '{{id}}_snapshot.jpg'
+          - alias: Wait for downloader to complete
+            wait_for_trigger:
+            - trigger: event
+              event_type: downloader_download_completed
+              event_data:
                 url: '{{host}}{{image}}'
-                subdir: '{{sub_dir}}'
                 filename: '{{id}}_snapshot.jpg'
-            - alias: Wait for downloader to complete
-              wait_for_trigger:
-              - trigger: event
-                event_type: downloader_download_completed
-                event_data:
-                  url: '{{host}}{{image}}'
-                  filename: '{{id}}_snapshot.jpg'
-                id: image_exists
-              continue_on_timeout: true
-              timeout:
-                hours: 0
-                minutes: 0
-                seconds: !input download_image_wait
-                milliseconds: 0
-        - alias: If Downloader is enabled wait until the image is downloaded then run LLM Image Analysis, if Downloader disabled continue
+              id: image_exists
+            continue_on_timeout: true
+            timeout:
+              hours: 0
+              minutes: 0
+              seconds: !input download_image_wait
+              milliseconds: 0
+        - alias: If Downloader is enabled wait until the image is downloaded then
+            run LLM Image Analysis, if Downloader disabled continue
           if:
           - condition: template
-            value_template: '{{ (wait is defined and wait.trigger.id == "image_exists") or (use_downloader == false) }}'
+            value_template: '{{ (wait is defined and wait.trigger.id == "image_exists")
+              or (use_downloader == false) }}'
           then:
           - delay:
               hours: 0
@@ -740,7 +733,7 @@ actions:
             - condition: template
               value_template: '{{use_llm_image}}'
             then:
-            - action: llmvision.image_analyzer
+            - action: llmvision.video_analyzerr
               data:
                 provider: !input provider_image
                 model: !input model_image
@@ -748,11 +741,14 @@ actions:
                 expose_images: !input expose_image
                 use_memory: !input use_memory
                 image_file: '{{image_file}}'
+                max_frames: 1
                 message: !input prompt
                 include_filename: false
                 target_width: !input target_width
                 max_tokens: !input tokens
                 generate_title: '{{gen_title}}'
+                frigate_retry_attempts: !input frigate_retry_attempts
+                frigate_retry_seconds: !input frigate_retry_seconds
               response_variable: response
             - delay:
                 hours: 0
@@ -791,7 +787,8 @@ actions:
           alias: Cooldown
         until:
         - condition: template
-          value_template: '{{ (wait is defined and wait.trigger.id == "image_exists") or (use_downloader == false) }}'
+          value_template: '{{ (wait is defined and wait.trigger.id == "image_exists")
+            or (use_downloader == false) }}'
 - alias: Event is end Do LLM video analysis and send notification
   if:
   - condition: trigger
@@ -815,28 +812,28 @@ actions:
           - condition: template
             value_template: '{{use_downloader}}'
           then:
-            - action: downloader.download_file
-              continue_on_error: true
-              metadata: {}
-              data:
-                overwrite: true
+          - action: downloader.download_file
+            continue_on_error: true
+            metadata: {}
+            data:
+              overwrite: true
+              url: '{{host}}{{video}}'
+              subdir: '{{sub_dir}}'
+              filename: '{{id}}_clip.mp4'
+          - alias: Wait for downloader to complete
+            wait_for_trigger:
+            - trigger: event
+              event_type: downloader_download_completed
+              event_data:
                 url: '{{host}}{{video}}'
-                subdir: '{{sub_dir}}'
                 filename: '{{id}}_clip.mp4'
-            - alias: Wait for downloader to complete
-              wait_for_trigger:
-              - trigger: event
-                event_type: downloader_download_completed
-                event_data:
-                  url: '{{host}}{{video}}'
-                  filename: '{{id}}_clip.mp4'
-                id: clip_exists
-              continue_on_timeout: true
-              timeout:
-                hours: 0
-                minutes: 0
-                seconds: !input download_clip_wait
-                milliseconds: 0
+              id: clip_exists
+            continue_on_timeout: true
+            timeout:
+              hours: 0
+              minutes: 0
+              seconds: !input download_clip_wait
+              milliseconds: 0
         - delay:
             hours: 0
             minutes: 0
@@ -844,10 +841,12 @@ actions:
             milliseconds: 0
         - variables:
             video_file: '{{video_local if use_downloader else video}}'
-        - alias: If Downloader is enabled wait until the clip is downloaded then run LLM video Analysis, if Downloader disabled continue
+        - alias: If Downloader is enabled wait until the clip is downloaded then run
+            LLM video Analysis, if Downloader disabled continue
           if:
           - condition: template
-            value_template: '{{ (wait is defined and wait.trigger.id == "clip_exists") or (use_downloader == false) }}'
+            value_template: '{{ (wait is defined and wait.trigger.id == "clip_exists")
+              or (use_downloader == false) }}'
           then:
           - action: llmvision.video_analyzer
             metadata: {}
@@ -899,7 +898,8 @@ actions:
             alias: Cooldown
         until:
         - condition: template
-          value_template: '{{ (wait is defined and wait.trigger.id == "clip_exists") or (use_downloader == false) }}'
+          value_template: '{{ (wait is defined and wait.trigger.id == "clip_exists")
+            or (use_downloader == false) }}'
 trigger_variables:
   frigate_topic: frigate/reviews
 variables:
