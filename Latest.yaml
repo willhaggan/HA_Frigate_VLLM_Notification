@@ -1,29 +1,29 @@
 blueprint:
-  name: Frigate LLM Notification Latest (v0.43)
+  name: Frigate LLM Notification (v0.6)
   author: whag
   description: "Basic requirements:<br /> - Home Assistant with an MQTT broker setup.
     <br /> - Frigate integration with MQTT setup. <br /> Link: https://github.com/blakeblackshear/frigate-hass-integration
     <br /> - LLM Vision integration with provider setup. <br /> Link: https://github.com/valentinfrlch/ha-llmvision
-    <br /> - Downloader integration. <br /> Link: https://www.home-assistant.io/integrations/downloader/<br
+    <br /> - Optional Downloader integration. (Ensure the Use Downloader Input is
+    Set Accordingly) <br /> Link: https://www.home-assistant.io/integrations/downloader/<br
     /><br />\nInformation:<br /> - Only suitable for one Frigate camera, use multiple
     instances of this automation for multiple cameras if required. <br /> - LLM Vision
     requires a provider setup for the automation to function, remember and memory
     options are optional. <br /><br /> Description: <br /> Use LLM Vision to analyse
     frigate snapshots and clips and send notifications via the Home Assistant companion
-    app. <br /> Monitors MQTT frigate/reviews topic of types [new],[update] and [end].
-    <br /> The Downloader integration has been used for storing the frigate files
-    locally before sending them to LLM. In my experience this has improved the reliability
-    for usingh LLM Vision with Frigate. Note that the downloader folder will need
-    maintained separately (i.e. old files deleted or backed up). This can be achieved
-    automatically via a shell command or similar <br /> This automation runs in parallel
-    mode. <br /><br /> Tested on Android only. <br /><br />\nVariables which may be
-    useful for the custom message and AI prompts\n  - {{input_objects}} = Objects
-    required<br />\n  - {{objects}} = Objects found<br />\n  - {{input_camera_name}}
-    = Camera required<br />\n  - {{camera_name}} = Camera triggered<br />\n  - {{zone_names}}
+    app. <br /> Monitors MQTT frigate/reviews topic of types [new] and [end]. <br
+    /> If you decide to use the Downloader integration for storing the frigate files
+    locally before sending them to LLM the downloader folder will need maintained
+    separately (i.e. old files deleted or backed up). This can be achieved automatically
+    via a shell command or similar <br /> This automation runs in parallel mode. <br
+    /><br /> Tested on Android only. <br /><br />\nVariables which may be useful for
+    the custom message and AI prompts\n  - {{input_objects}} = Objects required<br
+    />\n  - {{objects}} = Objects found<br />\n  - {{input_camera_name}} = Camera
+    required<br />\n  - {{camera_name}} = Camera triggered<br />\n  - {{zone_names}}
     = Zones required<br />\n  - {{before_zones}} = Zones triggered first<br />\n  -
     {{after_zones}} = Zones triggered last<br />\n  - {{detections{0] = Event ID 1
     (i.e.triggering event)<br />\n  - {{detections{1] = Event ID 2<br />\n\nVersion:
-    v 0.43\n"
+    v 0.5\n"
   domain: automation
   input:
     frigate:
@@ -42,6 +42,7 @@ blueprint:
               - integration: frigate
                 domain:
                 - camera
+        
         in_severity:
           name: Severity
           description: Frigate event severity.
@@ -176,14 +177,13 @@ blueprint:
       input:
         provider_image:
           name: Provider For Image Analysis
-          description: Provider to use for analyse.
+          description: Provider to use for image analyse action.
           selector:
             config_entry:
               integration: llmvision
-        
         model_image:
-          name: AI Model
-          description: AI Model
+          name: AI Model For Image Analysis 
+          description: AI Model for image analysis
           default: gemini-2.0-flash
           selector:
             select:
@@ -196,12 +196,14 @@ blueprint:
               - claude-3-5-haiku-latest
               - claude-sonnet-4-20250514
               - claude-opus-4-20250514
+              - claude-opus-4-1-20250805
               - gemini-1.5-flash
               - gemini-1.5-pro
               - gemini-2.0-flash
               - gemini-2.0-flash-lite
               - gemini-2.5-pro
               - gemini-2.5-flash
+              - gemini-2.5-flash-lite
               - llama-3.2-90b-vision-preview
               - llama-3.2-11b-vision-preview
               - Llama-4-Scout-17B-16E-Instruct-FP8
@@ -212,14 +214,14 @@ blueprint:
               custom_value: true
               sort: false
         provider_clip:
-          name: Provider For Clip Analysis 
-          description: Provoder to use for the clip analyse.
+          name: Provider For Clip Analysis
+          description: Provoder to use for the clip analyse action.
           selector:
             config_entry:
               integration: llmvision
         model_clip:
-          name: AI Model
-          description: AI Model
+          name: AI Model For Clip Analysis
+          description: AI Model for clip analysis
           default: gemini-2.0-flash
           selector:
             select:
@@ -242,11 +244,37 @@ blueprint:
               - llama-3.2-11b-vision-preview
               - Llama-4-Scout-17B-16E-Instruct-FP8
               - Llama-4-Maverick-17B-128E-Instruct-FP8
-              - meta-llama/llama-4-maverick-17b-128e-instruct
-              - meta-llama/llama-4-scout-17b-16e-instruct
               multiple: false
               custom_value: true
               sort: false
+    filters:
+      name: Filters
+      icon: mdi:account
+      description: Master Conditions to evaluate before running the automation actions. 
+      collapsed: true
+      input:
+        in_person_zone:
+          name: Vacant Zone
+          description: The zone required to be vacant.
+          default:
+          selector:
+            entity:
+              domain: zone
+              multiple: false
+        in_person_check:
+          name: Persons Away
+          description: Select the people to validate against the vacant zone.
+          default: []
+          selector:
+            entity:
+              domain: person
+              multiple: true
+        in_custom_condition:
+          name: Custom Condition 
+          description: Add any custom logic to evaluate before running the automation, the result must be true to continue.
+          default: []
+          selector:
+            condition: {}
     image_analyse:
       name: Snapshot Analyse
       icon: mdi:image
@@ -254,16 +282,18 @@ blueprint:
       collapsed: true
       input:
         in_title_image:
-          name: No AI Notification Title
+          name: Custom Notification Title
           description: Notification title for snapshot. If you are using LLM for image
             analyse and want a AI generated title ensure [Generate Title] below is
             enabled.
           default: '{{camera_name}} - {{sub_labels| join('','')|replace(''_'', ''
             '')}} Alert'
           selector:
-            text: {}
+            text:
+              multiple: false
+              multiline: false
         in_custom_msg:
-          name: No AI Notification Message
+          name: Custom Notification Message
           description: Inital notificaion message if not using LLM Vision for the
             snapshot analysis.
           default: A {{objects| join(' and a ')|replace('_', ' ')}} was detected in
@@ -448,11 +478,40 @@ blueprint:
               max: 60.0
               step: 1.0
               mode: slider
+        frigate_retry_attempts:
+          name: Frigate Max Retry Amount
+          description: In the event the frigate clip is not available set the amount
+            of times to retry fetching the file.
+          default: 3
+          selector:
+            number:
+              min: 1.0
+              max: 10.0
+              step: 1.0
+              mode: slider
+        frigate_retry_seconds:
+          name: Frigate Max Retry Delay In Seconds
+          description: Time between retrys
+          default: 1
+          selector:
+            number:
+              min: 1.0
+              max: 10.0
+              step: 1.0
+              mode: slider
     Downloader:
       name: Downloader Options
       icon: mdi:download
       collapsed: true
       input:
+        in_use_downloader:
+          name: Use The Downloader Integration
+          description: Store the image/clip locally using HA Downloader integration,
+            and use the local files for LLM Vision analysis. If this input is false
+            this section can be ignored. LLM Vision.
+          default: false
+          selector:
+            boolean: {}
         in_downloader:
           name: Downloader Directory
           description: Downloader integration root directory.
@@ -464,7 +523,7 @@ blueprint:
         in_downloader_sub:
           name: Downloader Sub Directory
           description: Define a sub directory within your downloader root directory.
-          default:
+          default: ""
           selector:
             text:
               multiline: false
@@ -564,6 +623,267 @@ blueprint:
               max: 60.0
               step: 1.0
               mode: slider
+        in_button1_title:
+          name: Button 1 Title (New Event)
+          description: Title for the first notification button (New Event).
+          default: View Live
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: View Live
+                - label: Silence
+                  value: Silence
+                - label: View Snapshot
+                  value: View Snapshot
+                - label: View Clip
+                  value: View Clip
+                - label: Call
+                  value: Call
+                - label: Hide
+                  value: ""
+
+              multiple: false
+              sort: false
+        in_button1_action:
+          name: Button 1 Action (New Event)
+          description: Action for the first notification button (New Event).
+          default: VIEW_LIVE
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: VIEW_LIVE
+                - label: Silence
+                  value: SILENCE
+                - label: View Snapshot
+                  value: VIEW_SNAPSHOT
+                - label: View Clip
+                  value: VIEW_CLIP
+                - label: Call
+                  value: CALL
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button2_title:
+          name: Button 2 Title (New Event)
+          description: Title for the second notification button (New Event).
+          default: View Snapshot
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: View Live
+                - label: Silence
+                  value: Silence
+                - label: View Snapshot
+                  value: View Snapshot
+                - label: View Clip
+                  value: View Clip
+                - label: Call
+                  value: Call
+                - label: Hide
+                  value: ""                 
+              multiple: false
+              sort: false
+        in_button2_action:
+          name: Button 2 Action (New Event)
+          description: Action for the second notification button (New Event).
+          default: VIEW_SNAPSHOT
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: VIEW_LIVE
+                - label: Silence
+                  value: SILENCE
+                - label: View Snapshot
+                  value: VIEW_SNAPSHOT
+                - label: View Clip
+                  value: VIEW_CLIP
+                - label: Call
+                  value: CALL
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button3_title:
+          name: Button 3 Title (New Event)
+          description: Title for the third notification button (New Event).
+          default: Call
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: View Live
+                - label: Silence
+                  value: Silence
+                - label: View Snapshot
+                  value: View Snapshot
+                - label: View Clip
+                  value: View Clip
+                - label: Call
+                  value: Call
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button3_action:
+          name: Button 3 Action (New Event)
+          description: Action for the third notification button (New Event).
+          default: CALL
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: VIEW_LIVE
+                - label: Silence
+                  value: SILENCE
+                - label: View Snapshot
+                  value: VIEW_SNAPSHOT
+                - label: View Clip
+                  value: VIEW_CLIP
+                - label: Call
+                  value: CALL
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button1_title2:
+          name: Button 1 Title (End Event)
+          description: Title for the first notification button (End Event).
+          default: View Live
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: View Live
+                - label: Silence
+                  value: Silence
+                - label: View Snapshot
+                  value: View Snapshot
+                - label: View Clip
+                  value: View Clip
+                - label: Call
+                  value: Call
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button1_action2:
+          name: Button 1 Action (End Event)
+          description: Action for the first notification button (End Event).
+          default: VIEW_LIVE
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: VIEW_LIVE
+                - label: Silence
+                  value: SILENCE
+                - label: View Snapshot
+                  value: VIEW_SNAPSHOT
+                - label: View Clip
+                  value: VIEW_CLIP
+                - label: Call
+                  value: CALL
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button2_title2:
+          name: Button 2 Title (End Event)
+          description: Title for the second notification button (End Event).
+          default: View Snapshot
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: View Live
+                - label: Silence
+                  value: Silence
+                - label: View Snapshot
+                  value: View Snapshot
+                - label: View Clip
+                  value: View Clip
+                - label: Call
+                  value: Call
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button2_action2:
+          name: Button 2 Action (End Event)
+          description: Action for the second notification button (End Event).
+          default: VIEW_SNAPSHOT
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: VIEW_LIVE
+                - label: Silence
+                  value: SILENCE
+                - label: View Snapshot
+                  value: VIEW_SNAPSHOT
+                - label: View Clip
+                  value: VIEW_CLIP
+                - label: Call
+                  value: CALL
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button3_title2:
+          name: Button 3 Title (End Event)
+          description: Title for the third notification button (End Event).
+          default: Call
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: View Live
+                - label: Silence
+                  value: Silence
+                - label: View Snapshot
+                  value: View Snapshot
+                - label: View Clip
+                  value: View Clip
+                - label: Call
+                  value: Call
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_button3_action2: 
+          name: Button 3 Action (End Event)
+          description: Action for the third notification button (End Event).
+          default: CALL
+          selector:
+            select:
+              options:
+                - label: View Live
+                  value: VIEW_LIVE
+                - label: Silence
+                  value: SILENCE
+                - label: View Snapshot
+                  value: VIEW_SNAPSHOT
+                - label: View Clip
+                  value: VIEW_CLIP
+                - label: Call
+                  value: CALL
+                - label: Hide
+                  value: ""
+              multiple: false
+              sort: false
+        in_call_number:
+          name: Call Phone Number
+          description: Phone number to dial when Call button is pressed (e.g. 07777777777).
+          default:
+          selector:
+            text:
+              multiline: false
+              multiple: false
     Actions:
       name: Custom Actions
       icon: mdi:arrow-all
@@ -592,7 +912,6 @@ blueprint:
           default: false
           selector:
             boolean: {}
-      
   source_url: https://github.com/willhaggan/HA_Frigate_VLLM_Notification/blob/main/Latest.yaml
 triggers:
 - trigger: mqtt
@@ -605,55 +924,51 @@ triggers:
   payload: end
   value_template: '{{value_json[''type'']}}'
   id: End event
+- trigger: event
+  event_type: mobile_app_notification_action
+  id: Button pressed
 conditions:
 - condition: template
-  value_template: '{{camera_match}}'
+  value_template: '{{camera_match or trigger.id == "Button pressed"}}'
   alias: Valid Camera
 - condition: template
-  value_template: '{{objects_match}}'
+  value_template: '{{objects_match or trigger.id == "Button pressed"}}'
   alias: Object Matched
 - condition: template
-  value_template: '{{sub_labels_match}}'
+  value_template: '{{sub_labels_match or trigger.id == "Button pressed"}}'
   alias: Sub Label Matched
 - condition: template
-  value_template: '{{zone_match}}'
+  value_template: '{{zone_match or trigger.id == "Button pressed"}}'
   alias: Valid Zone
 - condition: template
-  value_template: '{{severity_match}}'
+  value_template: '{{severity_match or trigger.id == "Button pressed"}}'
   alias: Valid Alert
+- condition: template
+  value_template: '{{zone_vacant or trigger.id == "Button pressed"}}'
+  alias: Zone Vacant
+- condition: template
+  value_template: '{{ custom_condition | length == 0 or custom_condition or trigger.id == "Button pressed"}}'
+  alias: Custom Condition
 actions:
 - if:
-    - condition: template
-      value_template: '{{enable_log}}'
+  - condition: template
+    value_template: '{{enable_log and trigger.id != "Button pressed"}}'
   then:
-    - action: logbook.log
-      metadata: {}
-      data:
-        name: LLM Vision Frigate Notification log
-        entity_id: '{{this.entity_id}}'
-        message: '___Event type: {{type}}
-        ___Review id: {{review_id}}
-        ___Input camera: {{input_camera}}
-        ___Camera triggered: {{input_camera_name}}
-        ___Detections ID''s: {{detections}}
-        ___Detection 1 ID: {{id}}
-        ___Objects required: {{input_objects}}
-        ___Objects found: {{objects}}
-        ___Object match: {{objects_match}}
-        ___Sub Labels required: {{input_sub_labels}}
-        ___Sub Labels found: {{sub_labels}}
-        ___Sub Labels match: {{sub_labels_match}}
-        ___Zones required: {{zone_names}}
-        ___Zones triggered before: {{before_zones}}
-        ___Zones triggered after: {{after_zones}}
-        ___Zone match: {{zone_match}}
-        ___Notify devices: {{notify_names}}
-        ___Downloader root: {{root_dir}}
-        ___Downloader sub: {{sub_dir}}
-        ___Thumb url {{thumb}}
-        ___Snapshot url {{image}}
-        ___Clip url {{video}}
-        ___GIF url {{gif}}___'
+  - action: logbook.log
+    metadata: {}
+    data:
+      name: LLM Vision Frigate Notification log
+      entity_id: '{{this.entity_id}}'
+      message: '___Event type: {{type}} ___Review id: {{review_id}} ___Input camera:
+        {{input_camera}} ___Camera triggered: {{input_camera_name}} ___Detections
+        ID''s: {{detections}} ___Detection 1 ID: {{id}} ___Objects required: {{input_objects}}
+        ___Objects found: {{objects}} ___Object match: {{objects_match}} ___Sub Labels
+        required: {{input_sub_labels}} ___Sub Labels found: {{sub_labels}} ___Sub
+        Labels match: {{sub_labels_match}} ___Zones required: {{zone_names}} ___Zones
+        triggered before: {{before_zones}} ___Zones triggered after: {{after_zones}}
+        ___Zone match: {{zone_match}} ___Vacant Zone: {{zone_vacant}} ___Notify devices: {{notify_names}} ___Downloader
+        root: {{root_dir}} ___Downloader sub: {{sub_dir}} ___Thumb url {{thumb}} ___Snapshot
+        url {{image}} ___Clip url {{video}} ___GIF url {{gif}}___'
 - alias: Event is new start LLM image analysis and send notification
   if:
   - condition: trigger
@@ -673,55 +988,67 @@ actions:
     - alias: Repeat Until file exists or 2 retries
       repeat:
         sequence:
-        - action: downloader.download_file
-          continue_on_error: true
-          metadata: {}
-          data:
-            overwrite: true
-            url: '{{host}}{{image}}'
-            subdir: '{{sub_dir}}'
-            filename: '{{id}}_snapshot.jpg'
-        - alias: Wait for downloader to complete
-          wait_for_trigger:
-          - trigger: event
-            event_type: downloader_download_completed
-            event_data:
-              url: '{{host}}{{image}}'
-              filename: '{{id}}_snapshot.jpg'
-            id: image_exists
-          continue_on_timeout: true
-          timeout:
-            hours: 0
-            minutes: 0
-            seconds: !input download_image_wait
-            milliseconds: 0
-        - alias: If file exists run LLM Image Analyzer and send notification
+        - alias: Downloader Integration Enabled
           if:
           - condition: template
-            value_template: '{{ wait.trigger.id == ''image_exists'' }}'
+            value_template: '{{use_downloader}}'
+          then:
+          - action: downloader.download_file
+            continue_on_error: true
+            metadata: {}
+            data:
+              overwrite: true
+              url: '{{host}}{{image}}'
+              subdir: '{{sub_dir}}'
+              filename: '{{id}}_snapshot.jpg'
+          - alias: Wait for downloader to complete
+            wait_for_trigger:
+            - trigger: event
+              event_type: downloader_download_completed
+              event_data:
+                url: '{{host}}{{image}}'
+                filename: '{{id}}_snapshot.jpg'
+              id: image_exists
+            continue_on_timeout: true
+            timeout:
+              hours: 0
+              minutes: 0
+              seconds: !input download_image_wait
+              milliseconds: 0
+        - alias: If Downloader is enabled wait until the image is downloaded then
+            run LLM Image Analysis, if Downloader disabled continue
+          if:
+          - condition: template
+            value_template: '{{ (wait is defined and wait.trigger.id == "image_exists")
+              or (use_downloader == false) }}'
           then:
           - delay:
               hours: 0
               minutes: 0
               seconds: !input delay_image
               milliseconds: 0
+          - variables:
+              image_file: '{{image_local if use_downloader else image}}'
           - if:
             - condition: template
               value_template: '{{use_llm_image}}'
             then:
-            - action: llmvision.image_analyzer
+            - action: llmvision.video_analyzer
               data:
                 provider: !input provider_image
                 model: !input model_image
                 remember: !input use_remember
                 expose_images: !input expose_image
                 use_memory: !input use_memory
-                image_file: '{{image_local}}'
+                video_file: '{{image_file}}'
+                max_frames: 1
                 message: !input prompt
                 include_filename: false
                 target_width: !input target_width
                 max_tokens: !input tokens
                 generate_title: '{{gen_title}}'
+                frigate_retry_attempts: !input frigate_retry_attempts
+                frigate_retry_seconds: !input frigate_retry_seconds
               response_variable: response
             - delay:
                 hours: 0
@@ -752,6 +1079,40 @@ actions:
                     tag: '{{id}}'
                     ttl: 0
                     priority: high
+                    actions:
+                      - action: "{{ 'SILENCE_'~ this.entity_id if button1_action == 'SILENCE' else ('URI' if '/' in (button1_action | lower) or button1_action in ['VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL'] else button1_action) }}"
+                        uri: >-
+                          {{
+                          (button1_action == 'VIEW_LIVE') and ('entityId:' ~ input_camera) or
+                          (button1_action == 'VIEW_SNAPSHOT') and image or
+                          (button1_action == 'VIEW_CLIP') and video or
+                          (button1_action == 'CALL') and ('deep-link://tel:' ~ call_number) or
+                          (button1_action not in ['SILENCE','VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL']) and '/lovelace'
+                          }}
+                        title: "{{button1_title}}"
+                        behavior: "{{ 'textInput' if button1_action == 'SILENCE' else '' }}"
+                      - action: "{{ 'SILENCE_'~ this.entity_id if button2_action == 'SILENCE' else ('URI' if '/' in (button2_action | lower) or button2_action in ['VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL'] else button2_action) }}"
+                        uri: >-
+                          {{
+                          (button2_action == 'VIEW_LIVE') and ('entityId:' ~ input_camera) or
+                          (button2_action == 'VIEW_SNAPSHOT') and image or
+                          (button2_action == 'VIEW_CLIP') and video or
+                          (button2_action == 'CALL') and ('deep-link://tel:' ~ call_number) or
+                          (button2_action not in ['SILENCE','VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL']) and '/lovelace'
+                          }}
+                        title: "{{button2_title}}"
+                        behavior: "{{ 'textInput' if button2_action == 'SILENCE' else '' }}"
+                      - action: "{{ 'SILENCE_'~ this.entity_id if button3_action == 'SILENCE' else ('URI' if '/' in (button3_action | lower) or button3_action in ['VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL'] else button3_action) }}"
+                        uri: >-
+                          {{
+                          (button3_action == 'VIEW_LIVE') and ('entityId:' ~ input_camera) or
+                          (button3_action == 'VIEW_SNAPSHOT') and image or
+                          (button3_action == 'VIEW_CLIP') and video or
+                          (button3_action == 'CALL') and ('deep-link://tel:' ~ call_number) or
+                          (button3_action not in ['SILENCE','VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL']) and '/lovelace'
+                          }}
+                        title: "{{button3_title}}"   
+                        behavior: "{{ 'textInput' if button3_action == 'SILENCE' else '' }}"
         - delay:
             hours: 0
             minutes: !input cooldown
@@ -760,8 +1121,8 @@ actions:
           alias: Cooldown
         until:
         - condition: template
-          value_template: '{{wait.trigger.id == ''image_exists'' or repeat.index ==
-            2}}'
+          value_template: '{{ (wait is defined and wait.trigger.id == "image_exists")
+            or (use_downloader == false) }}'
 - alias: Event is end Do LLM video analysis and send notification
   if:
   - condition: trigger
@@ -780,36 +1141,47 @@ actions:
         sequence: !input in_action2
     - repeat:
         sequence:
-        - action: downloader.download_file
-          continue_on_error: true
-          metadata: {}
-          data:
-            overwrite: true
-            url: '{{host}}{{video}}'
-            subdir: '{{sub_dir}}'
-            filename: '{{id}}_clip.mp4'
-        - alias: Wait for downloader to complete
-          wait_for_trigger:
-          - trigger: event
-            event_type: downloader_download_completed
-            event_data:
+        - alias: Downloader Integration Enabled
+          if:
+          - condition: template
+            value_template: '{{use_downloader}}'
+          then:
+          - action: downloader.download_file
+            continue_on_error: true
+            metadata: {}
+            data:
+              overwrite: true
               url: '{{host}}{{video}}'
+              subdir: '{{sub_dir}}'
               filename: '{{id}}_clip.mp4'
-            id: clip_exists
-          continue_on_timeout: true
-          timeout:
-            hours: 0
-            minutes: 0
-            seconds: !input download_clip_wait
-            milliseconds: 0
+          - alias: Wait for downloader to complete
+            wait_for_trigger:
+
+            - trigger: event
+              event_type: downloader_download_completed
+              event_data:
+                url: '{{host}}{{video}}'
+                filename: '{{id}}_clip.mp4'
+              id: clip_exists
+            continue_on_timeout: true
+            timeout:
+              hours: 0
+              minutes: 0
+              seconds: !input download_clip_wait
+              milliseconds: 0
         - delay:
             hours: 0
             minutes: 0
             seconds: !input delay_clip
             milliseconds: 0
-        - if:
+        - variables:
+            video_file: '{{video_local if use_downloader else video}}'
+        - alias: If Downloader is enabled wait until the clip is downloaded then run
+            LLM video Analysis, if Downloader disabled continue
+          if:
           - condition: template
-            value_template: '{{wait.trigger.id == ''clip_exists''}}'
+            value_template: '{{ (wait is defined and wait.trigger.id == "clip_exists")
+              or (use_downloader == false) }}'
           then:
           - action: llmvision.video_analyzer
             metadata: {}
@@ -819,13 +1191,15 @@ actions:
               remember: !input use_remember2
               expose_images: !input expose_clip
               use_memory: !input use_memory2
-              video_file: '{{video_local}}'
+              video_file: '{{video_file}}'
               max_frames: !input max_frames
               include_filename: false
               target_width: !input target_width2
               max_tokens: !input tokens2
               generate_title: '{{gen_title2}}'
               message: !input prompt2
+              frigate_retry_attempts: !input frigate_retry_attempts
+              frigate_retry_seconds: !input frigate_retry_seconds
             response_variable: response
           - delay:
               hours: 0
@@ -851,6 +1225,40 @@ actions:
                     interruption-level: active
                     ttl: 0
                     priority: high
+                    actions:
+                      - action: "{{ 'SILENCE_'~ this.entity_id if button1_action2 == 'SILENCE' else ('URI' if '/' in (button1_action2 | lower) or button1_action2 in ['VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL'] else button1_action2) }}"
+                        uri: >-
+                          {{
+                          (button1_action2 == 'VIEW_LIVE') and ('entityId:' ~ input_camera) or
+                          (button1_action2 == 'VIEW_SNAPSHOT') and image or
+                          (button1_action2 == 'VIEW_CLIP') and video or
+                          (button1_action2 == 'CALL') and ('deep-link://tel:' ~ call_number) or
+                          (button1_action2 not in ['SILENCE','VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL']) and '/lovelace'
+                          }}
+                        title: "{{button1_title2}}"
+                        behavior: "{{ 'textInput' if button1_action2 == 'SILENCE' else '' }}"
+                      - action: "{{ 'SILENCE_'~ this.entity_id if button2_action2 == 'SILENCE' else ('URI' if '/' in (button2_action2 | lower) or button2_action2 in ['VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL'] else button2_action2) }}"
+                        uri: >-
+                          {{
+                          (button2_action2 == 'VIEW_LIVE') and ('entityId:' ~ input_camera) or
+                          (button2_action2 == 'VIEW_SNAPSHOT') and image or
+                          (button2_action2 == 'VIEW_CLIP') and video or
+                          (button2_action2 == 'CALL') and ('deep-link://tel:' ~ call_number) or
+                          (button2_action2 not in ['SILENCE','VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL']) and '/lovelace'
+                          }}
+                        title: "{{button2_title2}}"
+                        behavior: "{{ 'textInput' if button2_action2 == 'SILENCE' else '' }}"
+                      - action: "{{ 'SILENCE_'~ this.entity_id if button3_action2 == 'SILENCE' else ('URI' if '/' in (button3_action2 | lower) or button3_action2 in ['VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL'] else button3_action2) }}"
+                        uri: >-
+                         {{
+                          (button3_action2 == 'VIEW_LIVE') and ('entityId:' ~ input_camera) or
+                          (button3_action2 == 'VIEW_SNAPSHOT') and image or
+                          (button3_action2 == 'VIEW_CLIP') and video or
+                          (button3_action2 == 'CALL') and ('deep-link://tel:' ~ call_number) or
+                          (button3_action2 not in ['SILENCE','VIEW_LIVE','VIEW_SNAPSHOT','VIEW_CLIP','CALL']) and '/lovelace'
+                         }}
+                        title: "{{button3_title2}}"
+                        behavior: "{{ 'textInput' if button3_action2 == 'SILENCE' else '' }}"
           - delay:
               hours: 0
               minutes: !input cooldown
@@ -859,8 +1267,45 @@ actions:
             alias: Cooldown
         until:
         - condition: template
-          value_template: '{{wait.trigger.id == ''clip_exists'' or repeat.index ==
-            2}}'
+          value_template: '{{ (wait is defined and wait.trigger.id == "clip_exists")
+            or (use_downloader == false) }}'
+- alias: Handle notification button actions
+  if:
+    - condition: template
+      value_template: '{{trigger.id == "Button pressed" and trigger.event.data.action == "SILENCE_"~ this.entity_id}}'
+  then:
+    - variables:
+        silence_timer: >-
+          {% if trigger.event.data.reply_text is defined and trigger.event.data.reply_text | regex_match('^\\d+$') %}
+            {{ trigger.event.data.reply_text | int }}
+          {% else %}
+            5
+          {% endif %}
+    - service: persistent_notification.create
+      data:
+        title: 'Notifications Silenced'
+        message: 'Notifications will be silenced for {{ silence_timer }} minutes.'
+    - service: logbook.log
+      data:
+        name: LLM Vision Frigate Notification log
+        entity_id: '{{this.entity_id}}'
+        message: 'Notifications silenced for {{ silence_timer }} minutes by {{ trigger.event.data.action }} button.'
+    - action: automation.turn_off
+      metadata: {}
+      data:
+        stop_actions: false
+      target:
+        entity_id: "{{this.entity_id}}"
+    - delay:
+        hours: 0
+        minutes: "{{silence_timer}}"
+        seconds: 0
+        milliseconds: 0
+    - action: automation.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: "{{this.entity_id}}"
 trigger_variables:
   frigate_topic: frigate/reviews
 variables:
@@ -872,57 +1317,156 @@ variables:
   input_zones: !input in_zones
   custom_zones: !input in_custom_zones
   all_zones: !input in_all_zones
+  person_check: !input in_person_check
+  person_zone: !input in_person_zone
+  zone_vacant: >-
+    {% if not person_zone or person_zone | length == 0 or person_check | length == 0 %}
+      true
+    {% else %}
+      {% set zone_persons = state_attr(person_zone, "persons") or [] %}
+      {{ person_check | select('in', zone_persons) | list | count == 0 }}
+    {% endif %}
+  custom_condition: !input in_custom_condition
   host: !input in_host
+  use_downloader: !input in_use_downloader
   downloader: !input in_downloader
   downloader_sub: !input in_downloader_sub
   notify_devices: !input in_notify_devices
   use_llm_image: !input in_use_llm_image
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
-  event: '{{ trigger.payload_json }}'
-  type: '{{event[''type'']}}'
-  review_id: '{{event[''after''][''id'']}}'
+  #event: '{{ trigger.payload_json }}'
+  event: >-
+    {% if trigger.id == "Button pressed" %}
+      {}
+    {% else %}
+      {{ trigger.payload_json }}
+    {% endif %}
+  type: >-
+    {% if trigger.id == "Button pressed" %}
+      ""
+    {% else %}
+      {{event['type']}}
+    {% endif %}
+  review_id: >-
+    {% if trigger.id == "Button pressed" %}
+      ""
+    {% else %}
+      {{event['after']['id']}}
+    {% endif %}
   input_camera_name: '{{input_camera|expand|map(attribute=''attributes.camera_name'',
     default=''none'')|list}}'
-  camera: '{{event[''after''][''camera'']}}'
+  camera: >-
+    {% if trigger.id == "Button pressed" %}
+      ""
+    {% else %}
+      {{event['after']['camera']}}
+    {% endif %}
   camera_name: '{{ camera | replace(''_'', '' '') | title }}'
   camera_match: '{{input_camera_name|select(''equalto'', camera)|list|length>0 }}'
-  detections: '{{ event[''after''][''data''][''detections''] }}'
-  id: '{{ detections[0] }}'
-  objects: '{{ event[''after''][''data''][''objects'']}}'
-  objects_match: '{{input_objects | length == 0 or (input_objects |select(''in'',
-    objects) |list |length > 0) }}'
-  sub_labels: '{{ event[''after''][''data''][''sub_labels'']}}'
+  detections: >-
+    {% if trigger.id == "Button pressed" %}
+      []
+    {% else %}
+      {{ event['after']['data']['detections'] }}
+    {% endif %}
+  id: >-
+    {% if trigger.id == "Button pressed" %}
+      ""
+    {% else %}
+      {{ detections[0] }}
+    {% endif %}
+  objects: >-
+    {% if trigger.id == "Button pressed" %}
+      []
+    {% else %}
+      {{ event['after']['data']['objects']}}
+    {% endif %}
+  objects_match: >-
+    {% set ns = namespace(matched = false)%}
+    {% if input_objects | length == 0 %}
+      {% set ns.matched = true %}
+    {% else %}
+      {% set ns.matched = false %}
+      {% for input_obj in input_objects %}
+        {% if input_obj == 'person' %}
+          {% if 'person' in objects or 'person-verified' in objects %}
+            {% set ns.matched = true %}
+          {% endif %}
+        {% elif input_obj in objects %}
+          {% set ns.matched = true %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {{ns.matched}}
+  sub_labels: >-
+    {% if trigger.id == "Button pressed" %}
+      []
+    {% else %}
+      {{ event['after']['data']['sub_labels']}}
+    {% endif %}
   sub_labels_match: '{{input_sub_labels | length == 0 or (input_sub_labels |select(''in'',
     sub_labels) |list |length > 0) }}'
-  zone_names: '{% set device_zones = input_zones %} {% set zones = device_zones +
+  zone_names: >-
+    {% set device_zones = input_zones %} {% set zones = device_zones +
     custom_zones %} {% set ns = namespace(device_names=[]) %}  {% for device_id in
     zones %} {% if device_attr(device_id, "name") != None %} {% set device_name =
     device_attr(device_id, "name") %} {% set sanitized_name = device_name | lower
     | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
     {% set ns.device_names = ns.device_names + [sanitized_name] %} {% else%} {% set
-    ns.device_names = ns.device_names + [device_id  | lower | regex_replace("[^a-z0-9_\-
-    ]", "") | replace(" ", "_") | replace("-", "_")] %} {% endif %}  {% endfor %}  {{
-    ns.device_names }}'
-  before_zones: '{{ event[''before''][''data''][''zones''] | lower | default([]) }}'
-  after_zones: '{{ event[''after''][''data''][''zones''] | lower | default([]) }}'
+    ns.device_names = ns.device_names + [device_id  | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_")] %} 
+    {% endif %}  
+    {% endfor %}  
+    {{ ns.device_names }}
+  before_zones: >-
+    {% if trigger.id == "Button pressed" %}
+      []
+    {% else %}
+      {{ event['before']['data']['zones'] | lower | default([]) }}
+    {% endif %}
+  after_zones: >-
+    {% if trigger.id == "Button pressed" %}
+      []
+    {% else %}
+      {{ event['after']['data']['zones'] | lower | default([]) }}
+    {% endif %}
   zone_entered: '{{ zone_names | length == 0 or ((zone_names | select(''in'', (before_zones
     + after_zones)) |list |length) > 0) }}'
   all_zones_entered: '{{true if (zone_names | reject(''in'',(before_zones + after_zones))
     | list | length == 0 and all_zones) or all_zones == false else false }}'
   zone_match: '{{zone_entered and all_zones_entered}}'
   input_severity: !input in_severity
-  severity: '{{event[''before''][''severity''] + event[''after''][''severity'']}}'
+  severity: >-
+    {% if trigger.id == "Button pressed" %}
+      []
+    {% else %}
+      {{ (event['before']['severity'] | default([])) + (event['after']['severity'] | default([])) }}
+    {% endif %}
   severity_match: '{{input_severity|select(''in'', severity)|list|length > 0}}'
-  notify_names: "{% set ns = namespace(device_names=[]) %}  {% for device_id in notify_devices%}\n
-    \ {% set device_name = device_attr(device_id, \"name\") %}\n  {% set sanitized_name
-    = \"mobile_app_\" + device_name | lower | regex_replace(\"[^a-z0-9_\\- ]\", \"\")
-    | replace(\" \", \"_\") | replace(\"-\", \"_\") %}\n  {% set ns.device_names =
-    ns.device_names + [sanitized_name] %}\n{% endfor %}  {{ ns.device_names }}"
-  root_dir: "{% set dir = downloader|trim %} {%if dir|length > 0%}\n {% if dir[-1]
-    != \"/\" %}\n {% set dir = dir + \"/\" %}\n {% endif%}\n{% endif%} {{dir}}"
-  sub_dir: "{% set dir = downloader_sub|trim %} {%if dir|length > 0%}\n {% if dir[-1]
-    != \"/\" %}\n {% set dir = dir + \"/\" %}\n {% endif%}\n{% endif%} {{dir}}"
+  notify_names: >-
+    {% set ns = namespace(device_names=[]) %}
+    {% for device_id in notify_devices %}
+      {% set device_name = device_attr(device_id, "name") %}
+      {% set sanitized_name = "mobile_app_" + device_name | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
+      {% set ns.device_names = ns.device_names + [sanitized_name] %}
+    {% endfor %}
+    {{ ns.device_names }}
+  root_dir: >-
+    {% set dir = downloader|trim %}
+    {% if dir|length > 0 %}
+      {% if dir[-1] != "/" %}
+        {% set dir = dir + "/" %}
+      {% endif %}
+    {% endif %}
+    {{ dir }}
+  sub_dir: >-
+    {% set dir = downloader_sub|trim %}
+    {% if dir|length > 0 %}
+      {% if dir[-1] != "/" %}
+        {% set dir = dir + "/" %}
+      {% endif %}
+    {% endif %}
+    {{ dir }}
   video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
   video_local: '{{root_dir}}{{sub_dir}}{{id}}_clip.mp4'
   thumb: /api/frigate/notifications/{{id}}/thumbnail.jpg
@@ -934,5 +1478,18 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
+  button1_title: !input in_button1_title
+  button1_action: !input in_button1_action
+  button2_title: !input in_button2_title
+  button2_action: !input in_button2_action
+  button3_title: !input in_button3_title
+  button3_action: !input in_button3_action
+  button1_title2: !input in_button1_title2
+  button1_action2: !input in_button1_action2
+  button2_title2: !input in_button2_title2
+  button2_action2: !input in_button2_action2
+  button3_title2: !input in_button3_title2
+  button3_action2: !input in_button3_action2
+  call_number: !input in_call_number
 mode: parallel
 max: 4
