@@ -372,7 +372,7 @@ We welcome contributions! Here's how to help:
 
 **Version**: v0.6  
 **Author**: whag  
-**Last Updated**: January 2025  
+**Last Updated**: August 2025  
 **Compatibility**: Home Assistant 2024.1+, Frigate 0.13+
 
 ## 📚 Quick Links
