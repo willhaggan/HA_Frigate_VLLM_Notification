@@ -54,7 +54,6 @@ An advanced Home Assistant automation blueprint that combines **Frigate NVR**, *
 - **Zone Vacancy Detection**: Only alert when specific people are away
 - **Person Presence Validation**: Check if family members are home/away
 - **Custom Conditions**: Add complex logic conditions
-- **Object Requirements**: Require ALL specified objects (not just any)
 - **Sub-label Support**: Advanced filtering with Frigate sub-labels
 
 ### 🔧 Features
