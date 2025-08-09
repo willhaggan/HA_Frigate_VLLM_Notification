@@ -361,10 +361,6 @@ We welcome contributions! Here's how to help:
 - Update documentation for any new features
 - Follow existing code style and patterns
 
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## 🙏 Acknowledgments
 
 - **[Frigate](https://github.com/blakeblackshear/frigate)** - Outstanding NVR software
