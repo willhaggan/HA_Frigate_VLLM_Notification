@@ -23,7 +23,7 @@ blueprint:
     = Zones required<br />\n  - {{before_zones}} = Zones triggered first<br />\n  -
     {{after_zones}} = Zones triggered last<br />\n  - {{detections{0] = Event ID 1
     (i.e.triggering event)<br />\n  - {{detections{1] = Event ID 2<br />\n\nVersion:
-    v 0.5\n"
+    v 0.6\n"
   domain: automation
   input:
     frigate:
