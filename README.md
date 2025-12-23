@@ -6,20 +6,6 @@
 
 An advanced Home Assistant automation blueprint that combines **Frigate NVR**, **LLM Vision AI**, and **interactive mobile notifications** to create intelligent, context-aware security alerts with actionable buttons. Now with native **iOS support**.
 
-## ⚠️ **IMPORTANT: Migration Notice**
-
-### **🚨 Breaking Changes (since v0.6)**
-
-**If you are upgrading from v0.43/0.5-dev or earlier, manual migration is required.**
-
-1. **📝 Document your existing settings**
-2. **🗑️ Delete existing automations** created with previous blueprint versions
-3. **📥 Import the new v0.7 blueprint**
-4. **🆕 Create new automations**
-5. **🔧 Configure new iOS settings** if applicable
-
----
-
 ## 🌟 Key Features
 
 ### 🍎 iOS & Android Support
