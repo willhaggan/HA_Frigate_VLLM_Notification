@@ -25,7 +25,9 @@ A Home Assistant blueprint that combines **Frigate NVR**, **LLM Vision AI**, and
 
 ## Installation
 
-1. Import the blueprint: **Settings → Automations & Scenes → Blueprints → Import Blueprint**, then point it at [blueprints/automation/frigate_llm_notification_v0_8.yaml](blueprints/automation/frigate_llm_notification_v0_8.yaml) in this repo (or its raw URL if hosted on GitHub).
+1. Import the blueprint using one of these:
+   - **Raw URL** (fastest): in Home Assistant go to **Settings → Automations & Scenes → Blueprints → Import Blueprint**, and paste `https://raw.githubusercontent.com/willhaggan/HA_Frigate_VLLM_Notification/main/Latest.yaml`.
+   - **Local file**: copy [blueprints/automation/frigate_llm_notification_v0_8.yaml](blueprints/automation/frigate_llm_notification_v0_8.yaml) from this repo into your Home Assistant `config/blueprints/automation/` folder.
 2. Create a new automation from the blueprint and fill in the minimum required inputs:
    - Frigate camera + required objects (e.g. `person`)
    - LLM Vision provider/model
@@ -87,7 +89,6 @@ Bug reports and pull requests are welcome — please include your Home Assistant
 ## Quick Links
 
 - [Blueprint file](blueprints/automation/frigate_llm_notification_v0_8.yaml) – ready to import
-- [Alternate AI Task blueprint](blueprints/automation/frigate_ai_task_notification.yaml) – same idea, built on HA's native AI Task feature instead of LLM Vision
 - [Blueprint notes / changelog](docs/blueprint-notes.md)
 - [Frigate documentation](https://docs.frigate.video/)
 - [LLM Vision setup](https://github.com/valentinfrlch/ha-llmvision)
